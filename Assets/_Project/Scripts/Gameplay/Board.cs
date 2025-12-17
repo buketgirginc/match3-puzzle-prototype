@@ -30,6 +30,13 @@ namespace Match3.Gameplay
                     Cells[x, y].Tile = (TileType)Random.Range(0, 4);
         }
 
+        public void SwapTiles(Vector2Int a, Vector2Int b)
+        {
+            var cellA = Cells[a.x, a.y];
+            var cellB = Cells[b.x, b.y];
+
+            (cellA.Tile, cellB.Tile) = (cellB.Tile, cellA.Tile);
+        }
         public string DebugPrint()
         {
             var sb = new StringBuilder();

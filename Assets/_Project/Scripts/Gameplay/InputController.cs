@@ -5,6 +5,8 @@ namespace Match3.Gameplay
 {
     public class InputController : MonoBehaviour
     {
+        [SerializeField] private BoardView boardView;
+
         private Camera _cam;
         private TileView _firstSelected;
 
@@ -18,22 +20,26 @@ namespace Match3.Gameplay
             if (Mouse.current == null) return;
             if (!Mouse.current.leftButton.wasPressedThisFrame) return;
 
-            // Screen -> World
+            TileView tile = RaycastTileUnderMouse();
+            if (tile == null) return;
+
+            HandleSelection(tile);
+        }
+
+        private TileView RaycastTileUnderMouse()
+        {
             Vector2 screenPos = Mouse.current.position.ReadValue();
+
             Vector3 worldPos = _cam.ScreenToWorldPoint(
                 new Vector3(screenPos.x, screenPos.y, 0f)
             );
 
             Vector2 rayPos = new Vector2(worldPos.x, worldPos.y);
 
-            // Raycast
             RaycastHit2D hit = Physics2D.Raycast(rayPos, Vector2.zero);
-            if (!hit.collider) return;
+            if (!hit.collider) return null;
 
-            TileView tile = hit.collider.GetComponent<TileView>();
-            if (tile == null) return;
-
-            HandleSelection(tile);
+            return hit.collider.GetComponent<TileView>();
         }
 
         private void HandleSelection(TileView tile)
@@ -43,7 +49,7 @@ namespace Match3.Gameplay
             {
                 _firstSelected = tile;
                 _firstSelected.SetSelected(true);
-                Debug.Log($"First: {_firstSelected.Cell.Pos}");
+                Debug.Log($"First: {_firstSelected.Cell.Pos} ({_firstSelected.Cell.Tile})");
                 return;
             }
 
@@ -56,15 +62,23 @@ namespace Match3.Gameplay
             }
 
             // Second click
-            var second = tile;
+            TileView second = tile;
 
-            // Check adjacency
+            // Adjacent? then swap
             if (AreAdjacent(_firstSelected.Cell.Pos, second.Cell.Pos))
             {
-                Debug.Log($"Swap attempt: {_firstSelected.Cell.Pos} <-> {second.Cell.Pos}");
-                // TODO (next step): actually swap + animate
+                Vector2Int a = _firstSelected.Cell.Pos;
+                Vector2Int b = second.Cell.Pos;
+
+                boardView.Board.SwapTiles(a, b);
+
+                boardView.RefreshCell(a);
+                boardView.RefreshCell(b);
+
                 _firstSelected.SetSelected(false);
                 _firstSelected = null;
+
+                Debug.Log($"Swapped: {a} <-> {b}");
                 return;
             }
 
@@ -73,14 +87,14 @@ namespace Match3.Gameplay
             _firstSelected = second;
             _firstSelected.SetSelected(true);
 
-            Debug.Log($"First moved to: {_firstSelected.Cell.Pos}");
+            Debug.Log($"First moved to: {_firstSelected.Cell.Pos} ({_firstSelected.Cell.Tile})");
         }
+
         private bool AreAdjacent(Vector2Int a, Vector2Int b)
         {
             int dx = Mathf.Abs(a.x - b.x);
             int dy = Mathf.Abs(a.y - b.y);
-            return (dx + dy) == 1; // exactly one step horizontally or vertically
+            return (dx + dy) == 1;
         }
-
     }
 }

@@ -26,6 +26,10 @@ namespace Match3.Gameplay
             _cell = cell;
             spriteRenderer.sprite = sprite;
         }
+        public void SetSprite(Sprite sprite)
+        {
+            spriteRenderer.sprite = sprite;
+        }
 
         public Cell Cell => _cell;
 
