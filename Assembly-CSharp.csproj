@@ -49,9 +49,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\_Project\Scripts\Gameplay\GameBootstrapper.cs" />
+    <Compile Include="Assets\_Project\Scripts\Gameplay\TileView.cs" />
     <Compile Include="Assets\_Project\Scripts\Core\Cell.cs" />
+    <Compile Include="Assets\_Project\Scripts\Gameplay\BoardView.cs" />
     <Compile Include="Assets\_Project\Scripts\Core\TileType.cs" />
     <Compile Include="Assets\_Project\Scripts\Gameplay\Board.cs" />
+    <Compile Include="Assets\_Project\Scripts\Gameplay\InputController.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

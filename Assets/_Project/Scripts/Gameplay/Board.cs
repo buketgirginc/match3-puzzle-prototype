@@ -16,7 +16,7 @@ namespace Match3.Gameplay
             Width = width;
             Height = height;
 
-            Cells = new Cell[Width, Height];
+            Cells = new Cell[Width, Height]; //boş grid
 
             for (int x = 0; x < Width; x++)
                 for (int y = 0; y < Height; y++)
