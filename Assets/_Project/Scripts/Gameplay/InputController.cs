@@ -64,7 +64,7 @@ namespace Match3.Gameplay
             // Second click
             TileView second = tile;
 
-            // Adjacent? then swap
+            // Adjacent? then try swap
             if (AreAdjacent(_firstSelected.Cell.Pos, second.Cell.Pos))
             {
                 Vector2Int a = _firstSelected.Cell.Pos;
@@ -72,16 +72,31 @@ namespace Match3.Gameplay
 
                 boardView.Board.SwapTiles(a, b); //data swap
 
-                boardView.RefreshCell(a); //view refresh
+                boardView.RefreshCell(a); //view refresh after swap
                 boardView.RefreshCell(b);
 
-                var matches = boardView.Board.FindAllMatches(); //match check
-                Debug.Log($"Matches after swap: {matches.Count}");
+                //validate: did this swap create a match at either endpoint?
+                bool createsMatch =
+                boardView.Board.CreatesMatchAt(a) ||
+                boardView.Board.CreatesMatchAt(b);
+
+                Debug.Log($"Swapped: {a} <-> {b}");
+
+                //if invalid, swap back
+                if (!createsMatch)
+                {
+                    Debug.Log("No match created -> swapping back");
+
+                    boardView.Board.SwapTiles(a, b);
+                    boardView.RefreshCell(a);
+                    boardView.RefreshCell(b);
+                }
+
 
                 _firstSelected.SetSelected(false); //selection reset
                 _firstSelected = null;
 
-                Debug.Log($"Swapped: {a} <-> {b}");
+
                 return;
             }
 

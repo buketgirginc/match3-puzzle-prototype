@@ -139,6 +139,50 @@ namespace Match3.Gameplay
 
             return result;
         }
+
+        public bool CreatesMatchAt(Vector2Int pos, int minLength = 3)
+        {
+            var type = Cells[pos.x, pos.y].Tile;
+
+            // Horizontal run through pos
+            int count = 1;
+
+            // left
+            for (int x = pos.x - 1; x >= 0; x--)
+            {
+                if (Cells[x, pos.y].Tile != type) break;
+                count++;
+            }
+
+            // right
+            for (int x = pos.x + 1; x < Width; x++)
+            {
+                if (Cells[x, pos.y].Tile != type) break;
+                count++;
+            }
+
+            if (count >= minLength) return true;
+
+            // Vertical run through pos
+            count = 1;
+
+            // down
+            for (int y = pos.y - 1; y >= 0; y--)
+            {
+                if (Cells[pos.x, y].Tile != type) break;
+                count++;
+            }
+
+            // up
+            for (int y = pos.y + 1; y < Height; y++)
+            {
+                if (Cells[pos.x, y].Tile != type) break;
+                count++;
+            }
+
+            return count >= minLength;
+        }
+
         public string DebugPrint()
         {
             var sb = new StringBuilder();
