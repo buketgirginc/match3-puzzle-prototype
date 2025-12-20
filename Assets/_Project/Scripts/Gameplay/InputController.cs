@@ -70,12 +70,15 @@ namespace Match3.Gameplay
                 Vector2Int a = _firstSelected.Cell.Pos;
                 Vector2Int b = second.Cell.Pos;
 
-                boardView.Board.SwapTiles(a, b);
+                boardView.Board.SwapTiles(a, b); //data swap
 
-                boardView.RefreshCell(a);
+                boardView.RefreshCell(a); //view refresh
                 boardView.RefreshCell(b);
 
-                _firstSelected.SetSelected(false);
+                var matches = boardView.Board.FindAllMatches(); //match check
+                Debug.Log($"Matches after swap: {matches.Count}");
+
+                _firstSelected.SetSelected(false); //selection reset
                 _firstSelected = null;
 
                 Debug.Log($"Swapped: {a} <-> {b}");

@@ -1,6 +1,7 @@
 using Match3.Core;
 using System.Text;
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace Match3.Gameplay
 {
@@ -36,6 +37,107 @@ namespace Match3.Gameplay
             var cellB = Cells[b.x, b.y];
 
             (cellA.Tile, cellB.Tile) = (cellB.Tile, cellA.Tile);
+        }
+
+        public List<Vector2Int> FindHorizontalMatches(int minLength = 3)
+        {
+            var matches = new List<Vector2Int>();
+
+            for (int y = 0; y < Height; y++)
+            {
+                int runStartX = 0;
+                int runLength = 1;
+
+                for (int x = 1; x < Width; x++)
+                {
+                    var prev = Cells[x - 1, y].Tile;
+                    var curr = Cells[x, y].Tile;
+
+                    if (curr == prev)
+                    {
+                        runLength++;
+                    }
+                    else
+                    {
+                        // run ended at x-1
+                        if (runLength >= minLength)
+                        {
+                            for (int k = 0; k < runLength; k++)
+                                matches.Add(new Vector2Int(runStartX + k, y));
+                        }
+
+                        // start new run at x
+                        runStartX = x;
+                        runLength = 1;
+                    }
+                }
+
+                // end-of-row run check (important!)
+                if (runLength >= minLength)
+                {
+                    for (int k = 0; k < runLength; k++)
+                        matches.Add(new Vector2Int(runStartX + k, y));
+                }
+            }
+
+            return matches;
+        }
+
+        public List<Vector2Int> FindVerticalMatches(int minLength = 3)
+        {
+            var matches = new List<Vector2Int>();
+
+            for (int x = 0; x < Width; x++)
+            {
+                int runStartY = 0;
+                int runLength = 1;
+
+                for (int y = 1; y < Height; y++)
+                {
+                    var prev = Cells[x, y - 1].Tile;
+                    var curr = Cells[x, y].Tile;
+
+                    if (curr == prev)
+                    {
+                        runLength++;
+                    }
+                    else
+                    {
+                        // run ended at y-1
+                        if (runLength >= minLength)
+                        {
+                            for (int k = 0; k < runLength; k++)
+                                matches.Add(new Vector2Int(x, runStartY + k));
+                        }
+
+                        // start new run at y
+                        runStartY = y;
+                        runLength = 1;
+                    }
+                }
+
+                // end-of-column run check
+                if (runLength >= minLength)
+                {
+                    for (int k = 0; k < runLength; k++)
+                        matches.Add(new Vector2Int(x, runStartY + k));
+                }
+            }
+
+            return matches;
+        }
+
+        public HashSet<Vector2Int> FindAllMatches(int minLength = 3)
+        {
+            var result = new HashSet<Vector2Int>();
+
+            foreach (var p in FindHorizontalMatches(minLength))
+                result.Add(p);
+
+            foreach (var p in FindVerticalMatches(minLength))
+                result.Add(p);
+
+            return result;
         }
         public string DebugPrint()
         {
