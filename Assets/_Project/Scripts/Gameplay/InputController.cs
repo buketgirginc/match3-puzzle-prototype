@@ -23,6 +23,8 @@ namespace Match3.Gameplay
 
         private void Update()
         {
+            if (_isAnimating) return;
+
             if (Mouse.current == null) return;
             if (!Mouse.current.leftButton.wasPressedThisFrame) return;
 
@@ -78,9 +80,26 @@ namespace Match3.Gameplay
                 Vector2Int a = _firstSelected.Cell.Pos;
                 Vector2Int b = second.Cell.Pos;
 
-                boardView.Board.SwapTiles(a, b); //data swap
+                // Same tile type? Don't swap (state wouldn't change, can't create a new match)
+                if (_firstSelected.Cell.Tile == second.Cell.Tile)
+                {
+                    Debug.Log($"Swap ignored (same type): {a} ({_firstSelected.Cell.Tile}) <-> {b} ({second.Cell.Tile})");
 
-                boardView.RefreshCell(a); //view refresh after swap
+                    StartCoroutine(PlayInvalidSwapFeedback(_firstSelected, second));
+
+                    // Reset selection
+                    _firstSelected.SetSelected(false);
+                    _firstSelected = null;
+                    return;
+                }
+
+                Debug.Log($"Swap attempted: {a} <-> {b}");
+
+                //data swap
+                boardView.Board.SwapTiles(a, b);
+
+                //view refresh after swap
+                boardView.RefreshCell(a);
                 boardView.RefreshCell(b);
 
                 //validate: did this swap create a match at either endpoint?
@@ -88,10 +107,10 @@ namespace Match3.Gameplay
                 boardView.Board.CreatesMatchAt(a) ||
                 boardView.Board.CreatesMatchAt(b);
 
-                Debug.Log($"Swapped: {a} <-> {b}| createsMatch={createsMatch}");
-
                 if (!createsMatch)
                 {
+                    Debug.Log($"Invalid move (no match). Swapping back: {a} <-> {b}");
+
                     // swap back immediately (state should not change)
                     boardView.Board.SwapTiles(a, b);
                     boardView.RefreshCell(a);
@@ -99,6 +118,11 @@ namespace Match3.Gameplay
 
                     // play invalid feedback (micro-nudge towards each other)
                     StartCoroutine(PlayInvalidSwapFeedback(_firstSelected, second));
+                }
+                else
+                {
+                    Debug.Log($"Valid move (match created): {a} <-> {b}");
+                    // Later: trigger resolve (clear, drop, refill, cascades)
                 }
 
 
