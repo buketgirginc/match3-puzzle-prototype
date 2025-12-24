@@ -1,7 +1,7 @@
 using Match3.Core;
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
-using System.Collections.Generic;
 
 namespace Match3.Gameplay
 {
@@ -24,11 +24,40 @@ namespace Match3.Gameplay
                     Cells[x, y] = new Cell(x, y);
         }
 
+        private TileType GetRandomColorTile()
+        {
+            // Assumes: Empty=0, colors start at 1 (Red..Yellow)
+            return (TileType)Random.Range(1, 5); // 1..4
+        }
+
         public void FillRandom()
         {
             for (int x = 0; x < Width; x++)
                 for (int y = 0; y < Height; y++)
-                    Cells[x, y].Tile = (TileType)Random.Range(0, 4);
+                    Cells[x, y].Tile = GetRandomColorTile();
+        }
+
+        public void FillRandomNoMatches()
+        {
+            for (int x = 0; x < Width; x++)
+            {
+                for (int y = 0; y < Height; y++)
+                {
+                    TileType t;
+                    do
+                    {
+                        t = GetRandomColorTile();
+                        Cells[x, y].Tile = t;
+                    }
+                    while (CreatesMatchAt(new Vector2Int(x, y)));
+                }
+            }
+        }
+
+        public void ClearMatches(IEnumerable<Vector2Int> matches)
+        {
+            foreach (var p in matches)
+                Cells[p.x, p.y].Tile = TileType.Empty;
         }
 
         public void SwapTiles(Vector2Int a, Vector2Int b)
@@ -53,14 +82,15 @@ namespace Match3.Gameplay
                     var prev = Cells[x - 1, y].Tile;
                     var curr = Cells[x, y].Tile;
 
-                    if (curr == prev)
+                    // ignore empties
+                    if (curr != TileType.Empty && curr == prev)
                     {
                         runLength++;
                     }
                     else
                     {
                         // run ended at x-1
-                        if (runLength >= minLength)
+                        if (prev != TileType.Empty && runLength >= minLength)
                         {
                             for (int k = 0; k < runLength; k++)
                                 matches.Add(new Vector2Int(runStartX + k, y));
@@ -73,7 +103,8 @@ namespace Match3.Gameplay
                 }
 
                 // end-of-row run check (important!)
-                if (runLength >= minLength)
+                var last = Cells[Width - 1, y].Tile;
+                if (last != TileType.Empty && runLength >= minLength)
                 {
                     for (int k = 0; k < runLength; k++)
                         matches.Add(new Vector2Int(runStartX + k, y));
@@ -97,14 +128,15 @@ namespace Match3.Gameplay
                     var prev = Cells[x, y - 1].Tile;
                     var curr = Cells[x, y].Tile;
 
-                    if (curr == prev)
+                    // ignore empties
+                    if (curr != TileType.Empty && curr == prev)
                     {
                         runLength++;
                     }
                     else
                     {
                         // run ended at y-1
-                        if (runLength >= minLength)
+                        if (prev != TileType.Empty && runLength >= minLength)
                         {
                             for (int k = 0; k < runLength; k++)
                                 matches.Add(new Vector2Int(x, runStartY + k));
@@ -117,7 +149,8 @@ namespace Match3.Gameplay
                 }
 
                 // end-of-column run check
-                if (runLength >= minLength)
+                var last = Cells[x, Height - 1].Tile;
+                if (last != TileType.Empty && runLength >= minLength)
                 {
                     for (int k = 0; k < runLength; k++)
                         matches.Add(new Vector2Int(x, runStartY + k));
@@ -143,6 +176,7 @@ namespace Match3.Gameplay
         public bool CreatesMatchAt(Vector2Int pos, int minLength = 3)
         {
             var type = Cells[pos.x, pos.y].Tile;
+            if (type == TileType.Empty) return false;
 
             // Horizontal run through pos
             int count = 1;
@@ -193,6 +227,7 @@ namespace Match3.Gameplay
                 {
                     char c = Cells[x, y].Tile switch
                     {
+                        TileType.Empty => '.',
                         TileType.Red => 'R',
                         TileType.Blue => 'B',
                         TileType.Green => 'G',
@@ -207,5 +242,4 @@ namespace Match3.Gameplay
             return sb.ToString();
         }
     }
-
 }

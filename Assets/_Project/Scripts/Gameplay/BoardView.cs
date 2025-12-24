@@ -1,4 +1,6 @@
+using System.Collections;
 using System.Collections.Generic;
+using Match3.Core;
 using UnityEngine;
 
 namespace Match3.Gameplay
@@ -7,19 +9,25 @@ namespace Match3.Gameplay
     {
         [Header("Tiles")]
         [SerializeField] private TileView tilePrefab;
-        [SerializeField] private Sprite[] tileSprites;
+        [SerializeField] private Sprite[] tileSprites; // R,B,G,Y (4 items)
         [SerializeField] private float cellSize = 0.85f;
 
         [Header("Board Background (optional)")]
         [SerializeField] private SpriteRenderer boardBackground;
         [SerializeField] private float backgroundPadding = 0.5f;          // padding per side
         [SerializeField] private Vector2 backgroundExtra = Vector2.zero;  // fine-tune
+
+        [Header("Clear Animation")]
+        [SerializeField] private float clearDuration = 0.12f;
+
         private Board _board;
 
         // Maps grid position -> the instantiated TileView
         private readonly Dictionary<Vector2Int, TileView> _viewsByPos = new();
 
         public Board Board => _board;
+        public bool IsResolving { get; set; }
+
 
         public void Init(Board board)
         {
@@ -51,10 +59,23 @@ namespace Match3.Gameplay
                     var tile = Instantiate(tilePrefab, transform);
                     tile.transform.position = new Vector3(x * cellSize, y * cellSize, 0f);
 
-                    tile.Init(cell, tileSprites[(int)cell.Tile]);
+                    tile.Init(cell, null);
+                    ApplyCellVisual(tile, cell.Tile);
 
                     _viewsByPos[cell.Pos] = tile;
                 }
+        }
+
+        private void ApplyCellVisual(TileView view, TileType tileType)
+        {
+            if (tileType == TileType.Empty)
+            {
+                view.SetEmpty();
+                return;
+            }
+
+            // TileType: Red=1..Yellow=4 ; tileSprites: 0..3
+            view.SetSprite(tileSprites[(int)tileType - 1]);
         }
 
         private void LayoutBackground()
@@ -76,18 +97,55 @@ namespace Match3.Gameplay
 
             boardBackground.size = new Vector2(targetW, targetH);
         }
+
         public void RefreshCell(Vector2Int pos)
         {
             var cell = _board.Cells[pos.x, pos.y];
 
             if (_viewsByPos.TryGetValue(pos, out var view))
             {
-                view.SetSprite(tileSprites[(int)cell.Tile]);
+                ApplyCellVisual(view, cell.Tile);
             }
             else
             {
                 Debug.LogWarning($"No TileView found at {pos} to refresh.");
             }
+        }
+
+        public IEnumerator AnimateClear(IEnumerable<Vector2Int> positions)
+        {
+            var tiles = new List<TileView>();
+
+            foreach (var pos in positions)
+            {
+                if (_viewsByPos.TryGetValue(pos, out var view))
+                    tiles.Add(view);
+            }
+
+            // store original scales
+            var original = new Vector3[tiles.Count];
+            for (int i = 0; i < tiles.Count; i++)
+                original[i] = tiles[i].transform.localScale;
+
+            float t = 0f;
+
+            while (t < clearDuration)
+            {
+                t += Time.deltaTime;
+                float a = Mathf.Clamp01(t / clearDuration);
+
+                // 1 -> 0.2
+                float s = Mathf.Lerp(1f, 0.2f, a);
+
+                for (int i = 0; i < tiles.Count; i++)
+                    tiles[i].transform.localScale = original[i] * s;
+
+                yield return null;
+            }
+
+            // reset scale back (tile yeniden dolunca normal görünsün)
+            for (int i = 0; i < tiles.Count; i++)
+                tiles[i].transform.localScale = original[i];
         }
     }
 }

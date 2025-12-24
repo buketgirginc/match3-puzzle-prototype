@@ -12,7 +12,6 @@ namespace Match3.Gameplay
 
         private bool _isAnimating;
 
-
         private Camera _cam;
         private TileView _firstSelected;
 
@@ -23,7 +22,9 @@ namespace Match3.Gameplay
 
         private void Update()
         {
+            // Block input while feedback animation is playing or board is resolving
             if (_isAnimating) return;
+            if (boardView != null && boardView.IsResolving) return;
 
             if (Mouse.current == null) return;
             if (!Mouse.current.leftButton.wasPressedThisFrame) return;
@@ -52,6 +53,9 @@ namespace Match3.Gameplay
 
         private void HandleSelection(TileView tile)
         {
+            if (tile.Cell == null) return;
+            if (boardView == null) return;
+
             // First click
             if (_firstSelected == null)
             {
@@ -76,60 +80,51 @@ namespace Match3.Gameplay
             if (AreAdjacent(_firstSelected.Cell.Pos, second.Cell.Pos))
             {
                 if (_isAnimating) return;
+                if (boardView.IsResolving) return;
 
                 Vector2Int a = _firstSelected.Cell.Pos;
                 Vector2Int b = second.Cell.Pos;
 
-                // Same tile type? Don't swap (state wouldn't change, can't create a new match)
+                // Same tile type? Don't swap
                 if (_firstSelected.Cell.Tile == second.Cell.Tile)
                 {
-                    Debug.Log($"Swap ignored (same type): {a} ({_firstSelected.Cell.Tile}) <-> {b} ({second.Cell.Tile})");
-
                     StartCoroutine(PlayInvalidSwapFeedback(_firstSelected, second));
 
-                    // Reset selection
                     _firstSelected.SetSelected(false);
                     _firstSelected = null;
                     return;
                 }
 
-                Debug.Log($"Swap attempted: {a} <-> {b}");
-
-                //data swap
+                // data swap
                 boardView.Board.SwapTiles(a, b);
 
-                //view refresh after swap
+                // view refresh after swap
                 boardView.RefreshCell(a);
                 boardView.RefreshCell(b);
 
-                //validate: did this swap create a match at either endpoint?
+                // validate: did this swap create a match at either endpoint?
                 bool createsMatch =
-                boardView.Board.CreatesMatchAt(a) ||
-                boardView.Board.CreatesMatchAt(b);
+                    boardView.Board.CreatesMatchAt(a) ||
+                    boardView.Board.CreatesMatchAt(b);
 
                 if (!createsMatch)
                 {
-                    Debug.Log($"Invalid move (no match). Swapping back: {a} <-> {b}");
-
-                    // swap back immediately (state should not change)
+                    // swap back immediately
                     boardView.Board.SwapTiles(a, b);
                     boardView.RefreshCell(a);
                     boardView.RefreshCell(b);
 
-                    // play invalid feedback (micro-nudge towards each other)
                     StartCoroutine(PlayInvalidSwapFeedback(_firstSelected, second));
                 }
                 else
                 {
-                    Debug.Log($"Valid move (match created): {a} <-> {b}");
-                    // Later: trigger resolve (clear, drop, refill, cascades)
+                    // Resolve once (no gravity/refill yet)
+                    StartCoroutine(ResolveClearOnce());
                 }
 
-
-                _firstSelected.SetSelected(false); //selection reset (always)
+                // selection reset (always)
+                _firstSelected.SetSelected(false);
                 _firstSelected = null;
-
-
                 return;
             }
 
@@ -137,9 +132,29 @@ namespace Match3.Gameplay
             _firstSelected.SetSelected(false);
             _firstSelected = second;
             _firstSelected.SetSelected(true);
-
-            Debug.Log($"First moved to: {_firstSelected.Cell.Pos} ({_firstSelected.Cell.Tile})");
         }
+
+        private IEnumerator ResolveClearOnce()
+        {
+            // Prevent double-start
+            if (boardView.IsResolving) yield break;
+
+            boardView.IsResolving = true;
+
+            var matches = boardView.Board.FindAllMatches();
+            if (matches.Count > 0)
+            {
+                yield return StartCoroutine(boardView.AnimateClear(matches));
+
+                boardView.Board.ClearMatches(matches);
+
+                foreach (var p in matches)
+                    boardView.RefreshCell(p);
+            }
+
+            boardView.IsResolving = false;
+        }
+
         private bool AreAdjacent(Vector2Int a, Vector2Int b)
         {
             int dx = Mathf.Abs(a.x - b.x);
@@ -193,7 +208,5 @@ namespace Match3.Gameplay
 
             _isAnimating = false;
         }
-
-
     }
 }
