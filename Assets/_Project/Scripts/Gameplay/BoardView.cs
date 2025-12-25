@@ -112,6 +112,14 @@ namespace Match3.Gameplay
             }
         }
 
+        public void RefreshAll()
+        {
+            for (int x = 0; x < _board.Width; x++)
+                for (int y = 0; y < _board.Height; y++)
+                    RefreshCell(new Vector2Int(x, y));
+        }
+
+
         public IEnumerator AnimateClear(IEnumerable<Vector2Int> positions)
         {
             var tiles = new List<TileView>();

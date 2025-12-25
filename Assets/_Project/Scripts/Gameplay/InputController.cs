@@ -61,7 +61,6 @@ namespace Match3.Gameplay
             {
                 _firstSelected = tile;
                 _firstSelected.SetSelected(true);
-                Debug.Log($"First: {_firstSelected.Cell.Pos} ({_firstSelected.Cell.Tile})");
                 return;
             }
 
@@ -118,8 +117,7 @@ namespace Match3.Gameplay
                 }
                 else
                 {
-                    // Resolve once (no gravity/refill yet)
-                    StartCoroutine(ResolveClearOnce());
+                    StartCoroutine(ResolveBoardWithGravity());
                 }
 
                 // selection reset (always)
@@ -134,26 +132,55 @@ namespace Match3.Gameplay
             _firstSelected.SetSelected(true);
         }
 
-        private IEnumerator ResolveClearOnce()
+        private IEnumerator ResolveBoardWithGravity()
         {
-            // Prevent double-start
             if (boardView.IsResolving) yield break;
 
             boardView.IsResolving = true;
 
-            var matches = boardView.Board.FindAllMatches();
-            if (matches.Count > 0)
+            Debug.Log("=== RESOLVE START ===");
+            Debug.Log("Initial Board:\n" + boardView.Board.DebugPrint());
+
+            int safety = 0;
+            while (safety++ < 50)
             {
+                Debug.Log($"--- Cascade Step {safety} ---");
+
+                //match detection
+                var matches = boardView.Board.FindAllMatches();
+                if (matches.Count == 0) { Debug.Log("No matches found. Resolve finished."); break; }
+
+                Debug.Log($"Matches found: {matches.Count}");
+                Debug.Log("Board BEFORE clear:\n" + boardView.Board.DebugPrint());
+
+                // clear anim
                 yield return StartCoroutine(boardView.AnimateClear(matches));
 
+                // clear data
                 boardView.Board.ClearMatches(matches);
+                Debug.Log("Board AFTER clear (empties created):\n" + boardView.Board.DebugPrint());
 
-                foreach (var p in matches)
-                    boardView.RefreshCell(p);
+                // gravity
+                bool moved = boardView.Board.ApplyGravity();
+                Debug.Log($"Gravity applied. Any tile moved? {moved}");
+                Debug.Log("Board AFTER gravity:\n" + boardView.Board.DebugPrint());
+
+                //refill
+                int spawned = boardView.Board.RefillEmptiesAvoidImmediateMatches();
+                Debug.Log($"Refill done. Spawned tiles: {spawned}");
+                Debug.Log("Board AFTER refill:\n" + boardView.Board.DebugPrint());
+
+                //görseli dataya eşitle
+                boardView.RefreshAll();
+                Debug.Log("View refreshed (sprites/colliders synced).");
+
+                yield return null;
             }
 
+            Debug.Log("=== RESOLVE END ===");
             boardView.IsResolving = false;
         }
+
 
         private bool AreAdjacent(Vector2Int a, Vector2Int b)
         {

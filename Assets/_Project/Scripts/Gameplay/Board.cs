@@ -217,6 +217,64 @@ namespace Match3.Gameplay
             return count >= minLength;
         }
 
+        public bool ApplyGravity()
+        {
+            bool moved = false;
+
+            for (int x = 0; x < Width; x++) //apply for every column
+            {
+                // writeY: Bu kolonda bir sonraki "dolu" taşın ineceği hedef y index'i.
+                int writeY = 0;
+
+                for (int readY = 0; readY < Height; readY++)  // readY: Kolonu aşağıdan yukarı tarar, dolu taşları bulur.
+                {
+                    var t = Cells[x, readY].Tile;
+                    if (t == TileType.Empty) continue; //hücre boşsa geç dolu taş arıyoruz
+
+                    if (readY != writeY) //taş yukarıdaysa onu writeY konumuna indir
+                    {
+                        Cells[x, writeY].Tile = t;
+                        Cells[x, readY].Tile = TileType.Empty; //eski yeri bosalt
+                        moved = true;
+                    }
+
+                    writeY++; //Bir sonraki dolu taş, bir üstteki boş yere inecek
+                }
+            }
+
+            return moved;
+        }
+
+        public int RefillEmptiesAvoidImmediateMatches(int maxTriesPerCell = 20)
+        {
+            int spawned = 0; //kaç hücreye yeni tile koyduk?
+
+            for (int x = 0; x < Width; x++)
+            {
+                for (int y = 0; y < Height; y++)
+                {
+                    if (Cells[x, y].Tile != TileType.Empty) continue; //tüm gridi gez, cell doluysa dokunma
+
+                    Vector2Int pos = new Vector2Int(x, y);
+
+                    TileType t = TileType.Red; //baslagıctaki renk önemli değil
+                    int tries = 0;
+
+                    do
+                    {
+                        t = GetRandomColorTile();
+                        Cells[x, y].Tile = t;
+                        tries++;
+                    }
+                    while (tries < maxTriesPerCell && CreatesMatchAt(pos));
+
+                    // (çok nadir) max tries dolarsa o anki tile’ı bırakırız
+                    spawned++;
+                }
+            }
+
+            return spawned;
+        }
         public string DebugPrint()
         {
             var sb = new StringBuilder();
