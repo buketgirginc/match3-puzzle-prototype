@@ -12,7 +12,7 @@ namespace Match3.Gameplay
         [SerializeField] private Sprite[] tileSprites; // R,B,G,Y (4 items)
         [SerializeField] private float cellSize = 0.85f;
 
-        [Header("Board Background (optional)")]
+        [Header("Board Background")]
         [SerializeField] private SpriteRenderer boardBackground;
         [SerializeField] private float backgroundPadding = 0.5f;          // padding per side
         [SerializeField] private Vector2 backgroundExtra = Vector2.zero;  // fine-tune

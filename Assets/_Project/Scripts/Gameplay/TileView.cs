@@ -6,12 +6,15 @@ namespace Match3.Gameplay
     public class TileView : MonoBehaviour
     {
         [SerializeField] private SpriteRenderer spriteRenderer;
+        [SerializeField] private Collider2D col;
         private Cell _cell;
         private Vector3 _baseScale;
         private Color _baseColor;
 
         private void Awake()
         {
+            if (!col) col = GetComponent<Collider2D>();
+
             _baseScale = transform.localScale;
             _baseColor = spriteRenderer.color;
         }
@@ -32,11 +35,15 @@ namespace Match3.Gameplay
         {
             spriteRenderer.enabled = true;
             spriteRenderer.sprite = sprite;
+
+            if (col) col.enabled = true;
         }
 
         public void SetEmpty()
         {
             spriteRenderer.enabled = false;
+
+            if (col) col.enabled = false;
         }
 
         public Cell Cell => _cell;

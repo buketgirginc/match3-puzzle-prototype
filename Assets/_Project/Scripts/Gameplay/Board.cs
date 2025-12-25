@@ -184,7 +184,7 @@ namespace Match3.Gameplay
             // left
             for (int x = pos.x - 1; x >= 0; x--)
             {
-                if (Cells[x, pos.y].Tile != type) break;
+                if (Cells[x, pos.y].Tile != type) break; //dont count when you see a different color
                 count++;
             }
 
