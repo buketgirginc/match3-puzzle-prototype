@@ -8,6 +8,9 @@ namespace Match3.Gameplay
         [SerializeField] private SpriteRenderer spriteRenderer;
         [SerializeField] private Collider2D col;
         private Cell _cell;
+
+        public Vector2Int GridPos { get; private set; }
+        public TileType Type { get; private set; }
         private Vector3 _baseScale;
         private Color _baseColor;
 
@@ -19,6 +22,15 @@ namespace Match3.Gameplay
             _baseColor = spriteRenderer.color;
         }
 
+        public void SetGridPos(Vector2Int pos)
+        {
+            GridPos = pos;
+        }
+
+        public void SetType(TileType type)
+        {
+            Type = type;
+        }
         public void SetSelected(bool selected)
         {
             transform.localScale = selected ? _baseScale * 1.12f : _baseScale;
@@ -28,6 +40,10 @@ namespace Match3.Gameplay
         public void Init(Cell cell, Sprite sprite)
         {
             _cell = cell;
+
+            SetGridPos(cell.Pos);
+            SetType(cell.Tile);
+
             SetSprite(sprite);
         }
 
@@ -44,6 +60,7 @@ namespace Match3.Gameplay
             spriteRenderer.enabled = false;
 
             if (col) col.enabled = false;
+            SetType(TileType.Empty);
         }
 
         public Cell Cell => _cell;

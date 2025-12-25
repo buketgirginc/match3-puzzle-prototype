@@ -68,6 +68,8 @@ namespace Match3.Gameplay
 
         private void ApplyCellVisual(TileView view, TileType tileType)
         {
+            view.SetType(tileType);
+
             if (tileType == TileType.Empty)
             {
                 view.SetEmpty();
