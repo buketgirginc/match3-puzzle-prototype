@@ -163,29 +163,29 @@ namespace Match3.Gameplay
         }
 
 
-        public IEnumerator AnimateClear(IEnumerable<Vector2Int> positions)
+        public IEnumerator AnimateClearAndRemove(IEnumerable<Vector2Int> positions)
         {
             var tiles = new List<TileView>();
 
+            // Collect TileViews to clear
             foreach (var pos in positions)
             {
-                if (_viewsByPos.TryGetValue(pos, out var view))
+                if (_viewsByPos.TryGetValue(pos, out var view) && view != null)
                     tiles.Add(view);
             }
 
-            // store original scales
+            // Store original scales
             var original = new Vector3[tiles.Count];
             for (int i = 0; i < tiles.Count; i++)
                 original[i] = tiles[i].transform.localScale;
 
             float t = 0f;
 
+            // Scale-down animation
             while (t < clearDuration)
             {
                 t += Time.deltaTime;
                 float a = Mathf.Clamp01(t / clearDuration);
-
-                // 1 -> 0.2
                 float s = Mathf.Lerp(1f, 0.2f, a);
 
                 for (int i = 0; i < tiles.Count; i++)
@@ -194,9 +194,19 @@ namespace Match3.Gameplay
                 yield return null;
             }
 
-            // reset scale back (tile yeniden dolunca normal görünsün)
+            // FINAL STEP: remove tiles from scene + dictionary
             for (int i = 0; i < tiles.Count; i++)
-                tiles[i].transform.localScale = original[i];
+            {
+                TileView tile = tiles[i];
+                Vector2Int pos = tile.GridPos;
+
+                // Remove mapping first
+                if (_viewsByPos.ContainsKey(pos))
+                    _viewsByPos.Remove(pos);
+
+                Destroy(tile.gameObject);
+            }
         }
+
     }
 }

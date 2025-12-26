@@ -171,7 +171,7 @@ namespace Match3.Gameplay
                 Debug.Log("Board BEFORE clear:\n" + boardView.Board.DebugPrint());
 
                 // clear anim
-                yield return StartCoroutine(boardView.AnimateClear(matches));
+                yield return StartCoroutine(boardView.AnimateClearAndRemove(matches));
 
                 // clear data
                 boardView.Board.ClearMatches(matches);
