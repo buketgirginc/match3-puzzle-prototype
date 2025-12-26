@@ -56,6 +56,9 @@ namespace Match3.Gameplay
                 {
                     var cell = _board.Cells[x, y];
 
+                    if (cell.Tile == TileType.Empty) //dont create tileview for empty cell
+                        continue;
+
                     var tile = Instantiate(tilePrefab, transform);
                     tile.transform.position = new Vector3(x * cellSize, y * cellSize, 0f);
 
@@ -103,15 +106,30 @@ namespace Match3.Gameplay
         public void RefreshCell(Vector2Int pos)
         {
             var cell = _board.Cells[pos.x, pos.y];
+            bool shouldHaveTile = cell.Tile != TileType.Empty;
+            bool hasView = _viewsByPos.TryGetValue(pos, out var view);
 
-            if (_viewsByPos.TryGetValue(pos, out var view))
+            if (!shouldHaveTile)
             {
-                ApplyCellVisual(view, cell.Tile);
+                if (hasView && view != null)
+                {
+                    Destroy(view.gameObject);
+                    _viewsByPos.Remove(pos);
+                }
+                return;
             }
-            else
+            //shouldHaveTile==true
+            if (!hasView || view == null)
             {
-                Debug.LogWarning($"No TileView found at {pos} to refresh.");
+                view = Instantiate(tilePrefab, transform);
+                view.transform.position = new Vector3(pos.x * cellSize, pos.y * cellSize, 0f);
+
+                view.Init(cell, null);
+                _viewsByPos[pos] = view;
             }
+
+            ApplyCellVisual(view, cell.Tile); //update the sprite
+
         }
 
         public void RefreshAll()
