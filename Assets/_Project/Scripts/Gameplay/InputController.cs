@@ -53,8 +53,12 @@ namespace Match3.Gameplay
 
         private void HandleSelection(TileView tile)
         {
-            if (tile.Cell == null) return;
             if (boardView == null) return;
+
+            // Unity "destroyed object" safe-guard:
+            // (Destroy edilmiş bir TileView referansı bazen != null görünür ama gerçekte null'dur.)
+            if (_firstSelected != null && _firstSelected.Equals(null))
+                _firstSelected = null;
 
             // First click
             if (_firstSelected == null)
@@ -76,16 +80,16 @@ namespace Match3.Gameplay
             TileView second = tile;
 
             // Adjacent? then try swap
-            if (AreAdjacent(_firstSelected.Cell.Pos, second.Cell.Pos))
+            if (AreAdjacent(_firstSelected.GridPos, second.GridPos))
             {
                 if (_isAnimating) return;
                 if (boardView.IsResolving) return;
 
-                Vector2Int a = _firstSelected.Cell.Pos;
-                Vector2Int b = second.Cell.Pos;
+                Vector2Int a = _firstSelected.GridPos;
+                Vector2Int b = second.GridPos;
 
                 // Same tile type? Don't swap
-                if (_firstSelected.Cell.Tile == second.Cell.Tile)
+                if (_firstSelected.Type == second.Type)
                 {
                     StartCoroutine(PlayInvalidSwapFeedback(_firstSelected, second));
 
@@ -94,12 +98,21 @@ namespace Match3.Gameplay
                     return;
                 }
 
-                // data swap
+                // 1) model swap (Board data)
                 boardView.Board.SwapTiles(a, b);
 
-                // view refresh after swap
-                boardView.RefreshCell(a);
-                boardView.RefreshCell(b);
+                // 2) view swap (move objects)
+                bool swappedViews = boardView.TrySwapViews(a, b);
+                if (!swappedViews)
+                {
+                    // Extremely rare, but protects against desync during refactor.
+                    // If view swap failed, undo model swap and bail.
+                    boardView.Board.SwapTiles(a, b);
+
+                    _firstSelected.SetSelected(false);
+                    _firstSelected = null;
+                    return;
+                }
 
                 // validate: did this swap create a match at either endpoint?
                 bool createsMatch =
@@ -108,12 +121,16 @@ namespace Match3.Gameplay
 
                 if (!createsMatch)
                 {
-                    // swap back immediately
+                    // swap back immediately (model)
                     boardView.Board.SwapTiles(a, b);
-                    boardView.RefreshCell(a);
-                    boardView.RefreshCell(b);
 
+                    // swap back (view) - if this fails, model/view may desync; log it.
+                    if (!boardView.TrySwapViews(a, b))
+                        Debug.LogWarning($"TrySwapViews failed while swapping back {a}<->{b}");
+
+                    // invalid feedback (nudge)
                     StartCoroutine(PlayInvalidSwapFeedback(_firstSelected, second));
+
                 }
                 else
                 {

@@ -22,7 +22,7 @@ namespace Match3.Gameplay
 
         private Board _board;
 
-        // Maps grid position -> the instantiated TileView
+        // Maps grid position -> the instantiated TileView (only for NON-empty cells)
         private readonly Dictionary<Vector2Int, TileView> _viewsByPos = new();
 
         public Board Board => _board;
@@ -36,6 +36,29 @@ namespace Match3.Gameplay
             LayoutBackground();
         }
 
+        public Vector3 GridToWorld(Vector2Int pos)
+        {
+            return new Vector3(pos.x * cellSize, pos.y * cellSize, 0f);
+        }
+
+        public bool TrySwapViews(Vector2Int a, Vector2Int b)
+        {
+            if (!_viewsByPos.TryGetValue(a, out var viewA) || viewA == null) return false;
+            if (!_viewsByPos.TryGetValue(b, out var viewB) || viewB == null) return false;
+
+            // swap dictionary mapping (which TileView belongs to which grid pos)
+            _viewsByPos[a] = viewB;
+            _viewsByPos[b] = viewA;
+
+            viewA.SetGridPos(b);
+            viewB.SetGridPos(a);
+
+            // snap transforms to new cell positions
+            viewA.transform.position = GridToWorld(b);
+            viewB.transform.position = GridToWorld(a);
+
+            return true;
+        }
         private void Render()
         {
             // Clean old children (safe if you hit Play multiple times)
