@@ -177,9 +177,8 @@ namespace Match3.Gameplay
                 boardView.Board.ClearMatches(matches);
                 Debug.Log("Board AFTER clear (empties created):\n" + boardView.Board.DebugPrint());
 
-                // gravity
-                bool moved = boardView.Board.ApplyGravity();
-                Debug.Log($"Gravity applied. Any tile moved? {moved}");
+                // gravity (animated) + model sync
+                yield return StartCoroutine(boardView.AnimateGravityAndSyncModel());
                 Debug.Log("Board AFTER gravity:\n" + boardView.Board.DebugPrint());
 
                 //refill

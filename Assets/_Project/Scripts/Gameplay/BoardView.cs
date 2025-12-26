@@ -20,6 +20,9 @@ namespace Match3.Gameplay
         [Header("Clear Animation")]
         [SerializeField] private float clearDuration = 0.12f;
 
+        [Header("Gravity Animation")]
+        [SerializeField] private float gravityDuration = 0.12f;
+
         private Board _board;
 
         // Maps grid position -> the instantiated TileView (only for NON-empty cells)
@@ -208,5 +211,90 @@ namespace Match3.Gameplay
             }
         }
 
+        public IEnumerator AnimateGravityAndSyncModel()
+        {
+            if (_board == null) yield break;
+            var newMap = new Dictionary<Vector2Int, TileView>(_viewsByPos.Count); //ayni tile sayisina sahip yeni bir mapping oluştur
+
+            var tiles = new List<TileView>(_viewsByPos.Count); //Her tile için start/end pozisyonları
+            var startPos = new List<Vector3>(_viewsByPos.Count);
+            var endPos = new List<Vector3>(_viewsByPos.Count);
+
+            for (int x = 0; x < _board.Width; x++)
+            {
+                // Bu kolondaki tile'ları topla
+                var column = new List<TileView>();
+
+                foreach (var kvp in _viewsByPos)
+                {
+                    if (kvp.Key.x == x && kvp.Value != null)
+                        column.Add(kvp.Value);
+                }
+
+                // Alttan üste sıralayalım (y küçük -> aşağı)
+                column.Sort((a, b) => a.GridPos.y.CompareTo(b.GridPos.y));
+
+                // "Compress": Bu kolonda tile sayısı kadar tile aşağıdan yukarı dizilecek
+                for (int i = 0; i < column.Count; i++)
+                {
+                    var tile = column[i];
+
+                    Vector2Int from = tile.GridPos;
+                    Vector2Int to = new Vector2Int(x, i);
+
+                    Vector3 fromW = tile.transform.position;  // gerçek dünya pozisyonu (swap sonrası daha güvenli)
+                    Vector3 toW = GridToWorld(to);
+
+                    // yeni mapping'e koy
+                    newMap[to] = tile;
+
+                    // tile'ın gridpos'unu hemen güncelle (input zaten kilitli resolve sırasında)
+                    tile.SetGridPos(to);
+
+                    tiles.Add(tile);
+                    startPos.Add(fromW);
+                    endPos.Add(toW);
+                }
+            }
+
+            // 2) Mapping'i güncelle (artık "hangi hücrede hangi obje var" doğru)
+            _viewsByPos.Clear();
+            foreach (var kvp in newMap)
+                _viewsByPos[kvp.Key] = kvp.Value;
+
+            // 3) Animasyon: tüm tile'ları aynı anda hedefe lerp et
+            float t = 0f;
+            float dur = Mathf.Max(0.0001f, gravityDuration);
+
+            while (t < dur)
+            {
+                t += Time.deltaTime;
+                float a = Mathf.Clamp01(t / dur);
+
+                for (int i = 0; i < tiles.Count; i++)
+                    tiles[i].transform.position = Vector3.Lerp(startPos[i], endPos[i], a);
+
+                yield return null;
+            }
+
+            // 4) Snap final (floating point drift olmasın)
+            for (int i = 0; i < tiles.Count; i++)
+                tiles[i].transform.position = endPos[i];
+
+            // 5) MODEL SYNC: Board.Cells'i sahnedeki tile objelerine göre tekrar yaz
+            // Önce tüm hücreleri Empty yap
+            for (int x = 0; x < _board.Width; x++)
+                for (int y = 0; y < _board.Height; y++)
+                    _board.Cells[x, y].Tile = TileType.Empty;
+
+            // Sonra mevcut objelerin Type'larını yerleştir
+            foreach (var kvp in _viewsByPos)
+            {
+                Vector2Int p = kvp.Key;
+                TileView tile = kvp.Value;
+                _board.Cells[p.x, p.y].Tile = tile.Type;
+            }
+
+        }
     }
 }
