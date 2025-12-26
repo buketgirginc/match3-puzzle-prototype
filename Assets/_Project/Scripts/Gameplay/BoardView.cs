@@ -23,6 +23,11 @@ namespace Match3.Gameplay
         [Header("Gravity Animation")]
         [SerializeField] private float gravityDuration = 0.12f;
 
+        [Header("Refill Animation")]
+        [SerializeField] private float refillDropDuration = 0.14f;
+        [SerializeField] private int spawnRowOffset = 2; // kaç hücre yukarıdan spawn edilsin
+
+
         private Board _board;
 
         // Maps grid position -> the instantiated TileView (only for NON-empty cells)
@@ -231,13 +236,13 @@ namespace Match3.Gameplay
                         column.Add(kvp.Value);
                 }
 
-                // Alttan üste sıralayalım (y küçük -> aşağı)
+                // en alttaki taş en önce olacak şekilde sıralama
                 column.Sort((a, b) => a.GridPos.y.CompareTo(b.GridPos.y));
 
                 // "Compress": Bu kolonda tile sayısı kadar tile aşağıdan yukarı dizilecek
                 for (int i = 0; i < column.Count; i++)
                 {
-                    var tile = column[i];
+                    var tile = column[i]; //i: gravity sonrası hedef y pozisyonudur
 
                     Vector2Int from = tile.GridPos;
                     Vector2Int to = new Vector2Int(x, i);
@@ -257,7 +262,7 @@ namespace Match3.Gameplay
                 }
             }
 
-            // 2) Mapping'i güncelle (artık "hangi hücrede hangi obje var" doğru)
+            // 2) yeni mappingi aktif hale getir
             _viewsByPos.Clear();
             foreach (var kvp in newMap)
                 _viewsByPos[kvp.Key] = kvp.Value;
@@ -277,7 +282,7 @@ namespace Match3.Gameplay
                 yield return null;
             }
 
-            // 4) Snap final (floating point drift olmasın)
+            // 4) Snap final (kesin pozisyona kilitliyoruz)
             for (int i = 0; i < tiles.Count; i++)
                 tiles[i].transform.position = endPos[i];
 
@@ -295,6 +300,69 @@ namespace Match3.Gameplay
                 _board.Cells[p.x, p.y].Tile = tile.Type;
             }
 
+        }
+
+        public IEnumerator AnimateRefillDrop()
+        {
+            var tiles = new List<TileView>();
+            var startPos = new List<Vector3>();
+            var endPos = new List<Vector3>();
+
+            for (int x = 0; x < _board.Width; x++)
+            {
+                for (int y = 0; y < _board.Height; y++)
+                {
+                    var cell = _board.Cells[x, y];
+                    if (cell.Tile == TileType.Empty) continue;
+
+                    Vector2Int pos = new Vector2Int(x, y);
+
+                    if (_viewsByPos.ContainsKey(pos)) continue;
+
+                    // Spawn: kolonun üstünden başlat
+                    Vector2Int spawnGrid = new Vector2Int(x, _board.Height + spawnRowOffset);
+                    Vector3 spawnWorld = GridToWorld(spawnGrid);
+
+                    // Target: hücrenin world pos'u
+                    Vector3 targetWorld = GridToWorld(pos);
+
+                    var view = Instantiate(tilePrefab, transform);
+                    view.transform.position = spawnWorld;
+
+                    // TileView metadata + visuals
+                    view.SetGridPos(pos);
+                    view.SetType(cell.Tile);
+                    ApplyCellVisual(view, cell.Tile);
+
+                    // Mapping'e ekle
+                    _viewsByPos[pos] = view;
+
+                    tiles.Add(view);
+                    startPos.Add(spawnWorld);
+                    endPos.Add(targetWorld);
+                }
+            }
+
+            if (tiles.Count == 0)
+                yield break;
+
+            float t = 0f;
+            float dur = Mathf.Max(0.0001f, refillDropDuration);
+
+            while (t < dur)
+            {
+                t += Time.deltaTime;
+                float a = Mathf.Clamp01(t / dur);
+
+                for (int i = 0; i < tiles.Count; i++)
+                    tiles[i].transform.position = Vector3.Lerp(startPos[i], endPos[i], a);
+
+                yield return null;
+            }
+
+            // Snap final
+            for (int i = 0; i < tiles.Count; i++)
+                tiles[i].transform.position = endPos[i];
         }
     }
 }

@@ -186,9 +186,8 @@ namespace Match3.Gameplay
                 Debug.Log($"Refill done. Spawned tiles: {spawned}");
                 Debug.Log("Board AFTER refill:\n" + boardView.Board.DebugPrint());
 
-                //görseli dataya eşitle
-                boardView.RefreshAll();
-                Debug.Log("View refreshed (sprites/colliders synced).");
+                yield return StartCoroutine(boardView.AnimateRefillDrop());
+                Debug.Log("Refill drop animation done.");
 
                 yield return null;
             }
