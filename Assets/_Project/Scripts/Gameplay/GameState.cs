@@ -21,15 +21,39 @@ namespace Match3.Gameplay
         public event System.Action<int> ObjectiveProgressChanged;
         public event System.Action ObjectivesReset;
         public event System.Action<int> MovesChanged;
+        public event System.Action<bool> GameOver; // true = win, false = lose
+        public bool IsGameOver { get; private set; }
+
 
 
         public void Init()
         {
+            IsGameOver = false;
+
             MovesLeft = startingMoves;
             foreach (var o in objectives) o.current = 0;
 
-            ObjectivesReset?.Invoke();
             MovesChanged?.Invoke(MovesLeft);
+            ObjectivesReset?.Invoke();
+
+        }
+
+        private void CheckGameOver()
+        {
+            if (IsGameOver) return;
+
+            if (IsWin)
+            {
+                IsGameOver = true;
+                GameOver?.Invoke(true);
+                return;
+            }
+
+            if (IsLose)
+            {
+                IsGameOver = true;
+                GameOver?.Invoke(false);
+            }
         }
 
         public bool CanSpendMove()
@@ -43,6 +67,8 @@ namespace Match3.Gameplay
             MovesLeft = Mathf.Max(0, MovesLeft - 1); //hamle sayısını 1 azalt ama asla 0ın altına düşürme
             if (MovesLeft != before)
                 MovesChanged?.Invoke(MovesLeft);
+
+            CheckGameOver();
         }
 
         public void CollectFromMatches(HashSet<Vector2Int> matches, Board board)
@@ -62,6 +88,7 @@ namespace Match3.Gameplay
                     }
                 }
             }
+            CheckGameOver();
         }
 
     }

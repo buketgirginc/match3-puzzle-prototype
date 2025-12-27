@@ -16,62 +16,138 @@ public class CameraFitToBoard : MonoBehaviour
     [Header("Padding")]
     [SerializeField] private float padding = 0.2f;
 
+    [Header("Debug")]
+    [SerializeField] private bool debugLog = false;
+
     private Camera cam;
+
+    // Cache to avoid re-fitting when nothing changed
+    private Bounds _lastBgBounds;
+    private float _lastAspect = -1f;
+    private float _lastPadding = -1f;
+    private Vector3 _lastCamPos;
+    private float _lastOrtho = -1f;
 
     private void Awake()
     {
         cam = GetComponent<Camera>();
     }
 
-    private void Start()
+    private void OnEnable()
     {
-        StartCoroutine(FitNextFrame());
+        // In case objects enable/disable during play
+        StartCoroutine(FitEndOfFrame());
     }
 
-    private IEnumerator FitNextFrame()
+    private void Start()
     {
-        // wait 1 frame so BoardView can finish LayoutBackground() sizing
-        yield return null;
-        Fit();
+        StartCoroutine(FitEndOfFrame());
+    }
+
+    private IEnumerator FitEndOfFrame()
+    {
+        // BoardBackground bounds / layout genelde bu noktaya kadar oturmuş olur
+        yield return new WaitForEndOfFrame();
+        Fit(force: true);
     }
 
     [ContextMenu("Fit")]
     public void Fit()
     {
+        Fit(force: true);
+    }
+
+    public void RequestFit()
+    {
+        // dışarıdan güvenli çağır: spam olmayacak
+        Fit(force: false);
+    }
+
+    private void Fit(bool force)
+    {
         if (cam == null) cam = GetComponent<Camera>();
         if (!cam.orthographic) return;
 
+        float aspect = cam.aspect;
+
+        // --- Prefer background bounds ---
         if (boardBackground != null)
         {
             Bounds b = boardBackground.bounds;
 
-            cam.transform.position = new Vector3(b.center.x, b.center.y, cam.transform.position.z);
+            // If nothing meaningful changed, do nothing
+            if (!force &&
+                BoundsApproximatelyEqual(b, _lastBgBounds) &&
+                Mathf.Approximately(aspect, _lastAspect) &&
+                Mathf.Approximately(padding, _lastPadding))
+            {
+                return;
+            }
 
-            float aspect = cam.aspect;
+            Vector3 newPos = new Vector3(b.center.x, b.center.y, cam.transform.position.z);
+
             float sizeByHeight = (b.size.y * 0.5f) + padding;
-            float sizeByWidth = ((b.size.x * 0.5f) / aspect) + padding;
+            float sizeByWidth = ((b.size.x * 0.5f) / Mathf.Max(0.0001f, aspect)) + padding;
+            float newOrtho = Mathf.Max(sizeByHeight, sizeByWidth);
 
-            cam.orthographicSize = Mathf.Max(sizeByHeight, sizeByWidth);
+            ApplyCamera(newPos, newOrtho);
 
-            Debug.Log($"[CameraFit] Fit to BACKGROUND bounds size={b.size} center={b.center} ortho={cam.orthographicSize}");
+            _lastBgBounds = b;
+            _lastAspect = aspect;
+            _lastPadding = padding;
+
+            if (debugLog)
+                Debug.Log($"[CameraFit] Fit BACKGROUND size={b.size} center={b.center} aspect={aspect} ortho={newOrtho}");
+
             return;
         }
 
-        // fallback to grid
+        // --- Fallback to grid size ---
         float w = (boardWidth - 1) * cellSize;
         float h = (boardHeight - 1) * cellSize;
 
-        if (boardRoot != null)
+        Vector3 center = boardRoot != null
+            ? boardRoot.position + new Vector3(w * 0.5f, h * 0.5f, 0f)
+            : new Vector3(w * 0.5f, h * 0.5f, 0f);
+
+        Vector3 pos = new Vector3(center.x, center.y, cam.transform.position.z);
+
+        float sizeH = (h * 0.5f) + padding;
+        float sizeW = ((w * 0.5f) / Mathf.Max(0.0001f, aspect)) + padding;
+        float ortho = Mathf.Max(sizeH, sizeW);
+
+        // If nothing changed, do nothing
+        if (!force &&
+            Mathf.Approximately(aspect, _lastAspect) &&
+            Mathf.Approximately(padding, _lastPadding) &&
+            Vector3.Distance(pos, _lastCamPos) < 0.0001f &&
+            Mathf.Abs(ortho - _lastOrtho) < 0.0001f)
         {
-            Vector3 center = boardRoot.position + new Vector3(w * 0.5f, h * 0.5f, 0f);
-            cam.transform.position = new Vector3(center.x, center.y, cam.transform.position.z);
+            return;
         }
 
-        float aspect2 = cam.aspect;
-        float sizeH = (h * 0.5f) + padding;
-        float sizeW = ((w * 0.5f) / aspect2) + padding;
+        ApplyCamera(pos, ortho);
 
-        cam.orthographicSize = Mathf.Max(sizeH, sizeW);
-        Debug.Log($"[CameraFit] Fit to GRID w={w} h={h} ortho={cam.orthographicSize}");
+        _lastAspect = aspect;
+        _lastPadding = padding;
+
+        if (debugLog)
+            Debug.Log($"[CameraFit] Fit GRID w={w} h={h} aspect={aspect} ortho={ortho}");
+    }
+
+    private void ApplyCamera(Vector3 pos, float ortho)
+    {
+        cam.transform.position = pos;
+        cam.orthographicSize = ortho;
+
+        _lastCamPos = pos;
+        _lastOrtho = ortho;
+    }
+
+    private static bool BoundsApproximatelyEqual(Bounds a, Bounds b)
+    {
+        // Bounds equality can be flaky due to float jitter
+        return Vector3.SqrMagnitude(a.center - b.center) < 0.000001f &&
+               Vector3.SqrMagnitude(a.size - b.size) < 0.000001f;
     }
 }

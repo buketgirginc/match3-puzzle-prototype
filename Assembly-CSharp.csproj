@@ -50,6 +50,7 @@
   <ItemGroup>
     <Compile Include="Assets\_Project\Scripts\Gameplay\GameBootstrapper.cs" />
     <Compile Include="Assets\_Project\Scripts\Gameplay\TileView.cs" />
+    <Compile Include="Assets\_Project\Scripts\UI\WinLosePresenter.cs" />
     <Compile Include="Assets\_Project\Scripts\UI\BoardWorldLayoutFromUI.cs" />
     <Compile Include="Assets\_Project\Scripts\UI\ObjectivesPanelPresenter.cs" />
     <Compile Include="Assets\_Project\Scripts\Core\Cell.cs" />
@@ -64,6 +65,7 @@
     <Compile Include="Assets\_Project\Scripts\UI\MovesTextView.cs" />
     <Compile Include="Assets\_Project\Scripts\UI\ObjectiveRowView.cs" />
     <Compile Include="Assets\_Project\Scripts\Gameplay\InputController.cs" />
+    <Compile Include="Assets\_Project\Scripts\UI\WinLosePanelView.cs" />
     <Compile Include="Assets\_Project\Scripts\Gameplay\GameState.cs" />
     <Compile Include="Assets\_Project\Scripts\UI\SafeArea.cs" />
   </ItemGroup>
