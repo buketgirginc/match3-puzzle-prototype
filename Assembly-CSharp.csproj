@@ -50,6 +50,7 @@
   <ItemGroup>
     <Compile Include="Assets\_Project\Scripts\Gameplay\GameBootstrapper.cs" />
     <Compile Include="Assets\_Project\Scripts\Gameplay\TileView.cs" />
+    <Compile Include="Assets\_Project\Scripts\UI\BoardWorldLayoutFromUI.cs" />
     <Compile Include="Assets\_Project\Scripts\UI\ObjectivesPanelPresenter.cs" />
     <Compile Include="Assets\_Project\Scripts\Core\Cell.cs" />
     <Compile Include="Assets\_Project\Scripts\UI\CameraFitToBoard.cs" />
