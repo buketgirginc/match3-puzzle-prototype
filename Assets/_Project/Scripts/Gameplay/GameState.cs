@@ -18,11 +18,18 @@ namespace Match3.Gameplay
         public bool IsWin => objectives.TrueForAll(o => o.current >= o.target); //TrueForAll listedeki her elemana şunu uygular: 
                                                                                 // “Her objective için o objective’in current’ı target’a eşit veya büyük mü?”
         public bool IsLose => MovesLeft <= 0 && !IsWin;
+        public event System.Action<int> ObjectiveProgressChanged;
+        public event System.Action ObjectivesReset;
+        public event System.Action<int> MovesChanged;
+
 
         public void Init()
         {
             MovesLeft = startingMoves;
             foreach (var o in objectives) o.current = 0;
+
+            ObjectivesReset?.Invoke();
+            MovesChanged?.Invoke(MovesLeft);
         }
 
         public bool CanSpendMove()
@@ -30,9 +37,12 @@ namespace Match3.Gameplay
             return MovesLeft > 0 && !IsWin;
         }
 
-        public void SpendMove() //hamle sayısını 1 azalt ama asla 0ın altına düşürme
+        public void SpendMove()
         {
-            MovesLeft = Mathf.Max(0, MovesLeft - 1);
+            int before = MovesLeft;
+            MovesLeft = Mathf.Max(0, MovesLeft - 1); //hamle sayısını 1 azalt ama asla 0ın altına düşürme
+            if (MovesLeft != before)
+                MovesChanged?.Invoke(MovesLeft);
         }
 
         public void CollectFromMatches(HashSet<Vector2Int> matches, Board board)
@@ -40,17 +50,19 @@ namespace Match3.Gameplay
             foreach (var p in matches)
             {
                 TileType t = board.Cells[p.x, p.y].Tile;
-                if (t == TileType.Empty) continue; //boşsa o pozisyonu atla
+                if (t == TileType.Empty) continue;
 
                 for (int i = 0; i < objectives.Count; i++)
                 {
                     if (objectives[i].type == t && objectives[i].current < objectives[i].target)
                     {
                         objectives[i].current++;
+                        ObjectiveProgressChanged?.Invoke(i);
                         break;
                     }
                 }
             }
         }
+
     }
 }

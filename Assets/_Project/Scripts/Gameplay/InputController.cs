@@ -7,6 +7,7 @@ namespace Match3.Gameplay
     public class InputController : MonoBehaviour
     {
         [SerializeField] private BoardView boardView;
+        [SerializeField] private GameState gameState;
         [SerializeField] private float invalidNudgeDistance = 0.12f;
         [SerializeField] private float invalidNudgeDuration = 0.12f;
 
@@ -15,13 +16,17 @@ namespace Match3.Gameplay
         private Camera _cam;
         private TileView _firstSelected;
 
+
+
         private void Awake()
         {
             _cam = Camera.main;
         }
 
         private void Update()
-        {
+        {   //no moves left
+            if (gameState != null && !gameState.CanSpendMove()) return;
+
             // Block input while feedback animation is playing or board is resolving
             if (_isAnimating) return;
             if (boardView != null && boardView.IsResolving) return;
@@ -134,6 +139,9 @@ namespace Match3.Gameplay
                 }
                 else
                 {
+                    if (gameState != null && gameState.CanSpendMove())
+                        gameState.SpendMove();
+
                     StartCoroutine(ResolveBoardWithGravity());
                 }
 
@@ -166,6 +174,10 @@ namespace Match3.Gameplay
                 //match detection
                 var matches = boardView.Board.FindAllMatches();
                 if (matches.Count == 0) { Debug.Log("No matches found. Resolve finished."); break; }
+
+                //objectives progress
+                if (gameState != null)
+                    gameState.CollectFromMatches(matches, boardView.Board);
 
                 Debug.Log($"Matches found: {matches.Count}");
                 Debug.Log("Board BEFORE clear:\n" + boardView.Board.DebugPrint());

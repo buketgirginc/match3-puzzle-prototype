@@ -50,12 +50,18 @@
   <ItemGroup>
     <Compile Include="Assets\_Project\Scripts\Gameplay\GameBootstrapper.cs" />
     <Compile Include="Assets\_Project\Scripts\Gameplay\TileView.cs" />
+    <Compile Include="Assets\_Project\Scripts\UI\ObjectivesPanelPresenter.cs" />
     <Compile Include="Assets\_Project\Scripts\Core\Cell.cs" />
     <Compile Include="Assets\_Project\Scripts\UI\CameraFitToBoard.cs" />
     <Compile Include="Assets\_Project\Scripts\Gameplay\MatchObjective.cs" />
     <Compile Include="Assets\_Project\Scripts\Gameplay\BoardView.cs" />
+    <Compile Include="Assets\_Project\Scripts\Core\ObjectiveType.cs" />
+    <Compile Include="Assets\_Project\Scripts\UI\MovesPresenter.cs" />
     <Compile Include="Assets\_Project\Scripts\Core\TileType.cs" />
+    <Compile Include="Assets\_Project\Scripts\UI\ObjectivesPanelView.cs" />
     <Compile Include="Assets\_Project\Scripts\Gameplay\Board.cs" />
+    <Compile Include="Assets\_Project\Scripts\UI\MovesTextView.cs" />
+    <Compile Include="Assets\_Project\Scripts\UI\ObjectiveRowView.cs" />
     <Compile Include="Assets\_Project\Scripts\Gameplay\InputController.cs" />
     <Compile Include="Assets\_Project\Scripts\Gameplay\GameState.cs" />
     <Compile Include="Assets\_Project\Scripts\UI\SafeArea.cs" />
