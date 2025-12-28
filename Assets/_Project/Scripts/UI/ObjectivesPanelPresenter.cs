@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using Match3.Core;
 using Match3.Gameplay;
 
@@ -11,7 +10,6 @@ public class ObjectivesPanelPresenter : MonoBehaviour
     [SerializeField] private GameState gameState;
 
     [Header("Board Layout")]
-    [SerializeField] private RectTransform objectivesPanelRect;
     [SerializeField] private BoardWorldLayoutFromUI boardLayout;
     private readonly List<ObjectiveRowView> _rows = new();
 
@@ -19,9 +17,6 @@ public class ObjectivesPanelPresenter : MonoBehaviour
     {
         if (panelView == null)
             panelView = GetComponent<ObjectivesPanelView>();
-
-        if (objectivesPanelRect == null && panelView != null)
-            objectivesPanelRect = panelView.transform as RectTransform;
 
         if (boardLayout == null)
             boardLayout = FindFirstObjectByType<BoardWorldLayoutFromUI>();
@@ -73,6 +68,9 @@ public class ObjectivesPanelPresenter : MonoBehaviour
                 var row = panelView.AddRow();
                 _rows.Add(row);
             }
+
+            //Panel yüksekliği değişti -> board hizasını bir sonraki frame sonunda uygula
+            ApplyBoardLayout();
         }
     }
 
@@ -110,13 +108,7 @@ public class ObjectivesPanelPresenter : MonoBehaviour
     private void ApplyBoardLayout()
     {
         if (boardLayout == null) return;
-        if (objectivesPanelRect == null) return;
-
-        // UI layout'unun final ölçülere oturmasını zorla
-        Canvas.ForceUpdateCanvases();
-        LayoutRebuilder.ForceRebuildLayoutImmediate(objectivesPanelRect);
-
-        boardLayout.ApplyLayout();
+        boardLayout.RequestApply();
     }
 
     private ObjectiveType ToObjectiveType(TileType tileType)

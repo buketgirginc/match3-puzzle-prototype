@@ -333,11 +333,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BoardWorldLayoutFromUI
   objectivesPanel: {fileID: 348807549}
   rootCanvas: {fileID: 117136249}
-  gapPixels: 12
+  gapPixels: 40
   boardRoot: {fileID: 1139482098}
   worldCamera: {fileID: 519420031}
   boardFrameRenderer: {fileID: 559833384}
-  debugLog: 0
+  debugLog: 1
 --- !u!1 &348807548
 GameObject:
   m_ObjectHideFlags: 0
@@ -432,7 +432,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectivesPanelPresenter
   panelView: {fileID: 348807553}
   gameState: {fileID: 1758535504}
-  objectivesPanelRect: {fileID: 348807549}
   boardLayout: {fileID: 300531055}
 --- !u!114 &348807553
 MonoBehaviour:
@@ -646,6 +645,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CameraFitToBoard
   boardRoot: {fileID: 797755789}
   boardBackground: {fileID: 559833384}
+  fitPosition: 0
   boardWidth: 8
   boardHeight: 8
   cellSize: 0.85

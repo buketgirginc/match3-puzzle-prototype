@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class BoardWorldLayoutFromUI : MonoBehaviour
@@ -14,6 +15,28 @@ public class BoardWorldLayoutFromUI : MonoBehaviour
 
     [Header("Debug")]
     [SerializeField] private bool debugLog = false;
+
+    private bool _pendingApply;
+    private void OnEnable()
+    {
+        // Scene açılışında da 1 kere hizalamayı garantile
+        RequestApply();
+    }
+
+
+    public void RequestApply()
+    {
+        _pendingApply = true;
+    }
+
+    private void LateUpdate()
+    {
+        if (!_pendingApply) return;
+        _pendingApply = false;
+        ApplyLayout();
+    }
+
+    [ContextMenu("Apply Layout Now")]
     public void ApplyLayout()
     {
         if (objectivesPanel == null ||
@@ -30,7 +53,7 @@ public class BoardWorldLayoutFromUI : MonoBehaviour
         Vector3[] corners = new Vector3[4];
         objectivesPanel.GetWorldCorners(corners);
 
-        // corners: 0=bottom-left, 1=top-left, 2=top-right, 3=bottom-right
+        // 0 = bottom-left
         Vector3 panelBottomWorld = corners[0];
 
         // Panel alt kenarını SCREEN SPACE'e çevir
@@ -62,6 +85,7 @@ public class BoardWorldLayoutFromUI : MonoBehaviour
             boardRoot.position += new Vector3(0f, deltaY, 0f);
 
         if (debugLog)
-            Debug.Log($"[BoardWorldLayoutFromUI] Applied deltaY={deltaY:0.####} targetY={targetWorld.y:0.####} frameTopY={frameTopY:0.####}");
+            Debug.Log($"[BoardWorldLayoutFromUI] gapPixels={gapPixels} deltaY={deltaY:0.####} targetY={targetWorld.y:0.####} frameTopY={frameTopY:0.####}");
     }
+
 }

@@ -8,6 +8,10 @@ public class CameraFitToBoard : MonoBehaviour
     [SerializeField] private Transform boardRoot;
     [SerializeField] private SpriteRenderer boardBackground; // assign BoardBackground
 
+    [Header("Behavior")]
+    [Tooltip("If enabled, camera will move to center on the board. If disabled, only orthographic size is adjusted.")]
+    [SerializeField] private bool fitPosition = false;
+
     [Header("Grid Fallback")]
     [SerializeField] private int boardWidth = 8;
     [SerializeField] private int boardHeight = 8;
@@ -25,8 +29,9 @@ public class CameraFitToBoard : MonoBehaviour
     private Bounds _lastBgBounds;
     private float _lastAspect = -1f;
     private float _lastPadding = -1f;
-    private Vector3 _lastCamPos;
     private float _lastOrtho = -1f;
+    private Vector3 _lastPos;
+    private bool _hasLastPos;
 
     private void Awake()
     {
@@ -79,25 +84,32 @@ public class CameraFitToBoard : MonoBehaviour
             if (!force &&
                 BoundsApproximatelyEqual(b, _lastBgBounds) &&
                 Mathf.Approximately(aspect, _lastAspect) &&
-                Mathf.Approximately(padding, _lastPadding))
+                Mathf.Approximately(padding, _lastPadding) &&
+                (!fitPosition || (_hasLastPos && Vector3.SqrMagnitude(GetTargetPos(b) - _lastPos) < 0.000001f)))
             {
                 return;
             }
-
-            Vector3 newPos = new Vector3(b.center.x, b.center.y, cam.transform.position.z);
 
             float sizeByHeight = (b.size.y * 0.5f) + padding;
             float sizeByWidth = ((b.size.x * 0.5f) / Mathf.Max(0.0001f, aspect)) + padding;
             float newOrtho = Mathf.Max(sizeByHeight, sizeByWidth);
 
-            ApplyCamera(newPos, newOrtho);
+            ApplyOrtho(newOrtho);
+
+            if (fitPosition)
+            {
+                Vector3 pos = GetTargetPos(b);
+                cam.transform.position = pos;
+                _lastPos = pos;
+                _hasLastPos = true;
+            }
 
             _lastBgBounds = b;
             _lastAspect = aspect;
             _lastPadding = padding;
 
             if (debugLog)
-                Debug.Log($"[CameraFit] Fit BACKGROUND size={b.size} center={b.center} aspect={aspect} ortho={newOrtho}");
+                Debug.Log($"[CameraFit] Fit BACKGROUND size={b.size} center={b.center} aspect={aspect} ortho={newOrtho} fitPos={fitPosition}");
 
             return;
         }
@@ -106,41 +118,54 @@ public class CameraFitToBoard : MonoBehaviour
         float w = (boardWidth - 1) * cellSize;
         float h = (boardHeight - 1) * cellSize;
 
-        Vector3 center = boardRoot != null
-            ? boardRoot.position + new Vector3(w * 0.5f, h * 0.5f, 0f)
-            : new Vector3(w * 0.5f, h * 0.5f, 0f);
-
-        Vector3 pos = new Vector3(center.x, center.y, cam.transform.position.z);
-
         float sizeH = (h * 0.5f) + padding;
         float sizeW = ((w * 0.5f) / Mathf.Max(0.0001f, aspect)) + padding;
         float ortho = Mathf.Max(sizeH, sizeW);
+
+        Vector3 fallbackPos = cam.transform.position;
+        if (fitPosition)
+        {
+            Vector3 center = boardRoot != null
+                ? boardRoot.position + new Vector3(w * 0.5f, h * 0.5f, 0f)
+                : new Vector3(w * 0.5f, h * 0.5f, 0f);
+
+            fallbackPos = new Vector3(center.x, center.y, cam.transform.position.z);
+        }
 
         // If nothing changed, do nothing
         if (!force &&
             Mathf.Approximately(aspect, _lastAspect) &&
             Mathf.Approximately(padding, _lastPadding) &&
-            Vector3.Distance(pos, _lastCamPos) < 0.0001f &&
-            Mathf.Abs(ortho - _lastOrtho) < 0.0001f)
+            Mathf.Abs(ortho - _lastOrtho) < 0.0001f &&
+            (!fitPosition || (_hasLastPos && Vector3.SqrMagnitude(fallbackPos - _lastPos) < 0.000001f)))
         {
             return;
         }
 
-        ApplyCamera(pos, ortho);
+        ApplyOrtho(ortho);
+
+        if (fitPosition)
+        {
+            cam.transform.position = fallbackPos;
+            _lastPos = fallbackPos;
+            _hasLastPos = true;
+        }
 
         _lastAspect = aspect;
         _lastPadding = padding;
 
         if (debugLog)
-            Debug.Log($"[CameraFit] Fit GRID w={w} h={h} aspect={aspect} ortho={ortho}");
+            Debug.Log($"[CameraFit] Fit GRID w={w} h={h} aspect={aspect} ortho={ortho} fitPos={fitPosition}");
     }
 
-    private void ApplyCamera(Vector3 pos, float ortho)
+    private Vector3 GetTargetPos(Bounds b)
     {
-        cam.transform.position = pos;
-        cam.orthographicSize = ortho;
+        return new Vector3(b.center.x, b.center.y, cam.transform.position.z);
+    }
 
-        _lastCamPos = pos;
+    private void ApplyOrtho(float ortho)
+    {
+        cam.orthographicSize = ortho;
         _lastOrtho = ortho;
     }
 
