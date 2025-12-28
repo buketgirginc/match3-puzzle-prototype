@@ -280,6 +280,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 58b34e60089c8674aa739a974950459d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SafeArea
+  debugLog: 0
 --- !u!114 &300531053
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -336,6 +337,7 @@ MonoBehaviour:
   boardRoot: {fileID: 1139482098}
   worldCamera: {fileID: 519420031}
   boardFrameRenderer: {fileID: 559833384}
+  debugLog: 0
 --- !u!1 &348807548
 GameObject:
   m_ObjectHideFlags: 0
@@ -430,6 +432,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectivesPanelPresenter
   panelView: {fileID: 348807553}
   gameState: {fileID: 1758535504}
+  objectivesPanelRect: {fileID: 348807549}
+  boardLayout: {fileID: 300531055}
 --- !u!114 &348807553
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -646,6 +650,7 @@ MonoBehaviour:
   boardHeight: 8
   cellSize: 0.85
   padding: 0.2
+  debugLog: 0
 --- !u!1 &550815412
 GameObject:
   m_ObjectHideFlags: 0
@@ -1419,10 +1424,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bbe548a8d074b7f469153f4f64d2d8f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Match3.Gameplay.GameState
-  startingMoves: 20
+  startingMoves: 30
   objectives:
-  - type: 3
-    target: 5
+  - type: 2
+    target: 10
     current: 0
 --- !u!4 &1758535505
 Transform:

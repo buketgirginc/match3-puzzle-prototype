@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using Match3.Core;
 using Match3.Gameplay;
 
@@ -9,12 +10,21 @@ public class ObjectivesPanelPresenter : MonoBehaviour
     [SerializeField] private ObjectivesPanelView panelView;
     [SerializeField] private GameState gameState;
 
+    [Header("Board Layout")]
+    [SerializeField] private RectTransform objectivesPanelRect;
+    [SerializeField] private BoardWorldLayoutFromUI boardLayout;
     private readonly List<ObjectiveRowView> _rows = new();
 
     private void Awake()
     {
         if (panelView == null)
             panelView = GetComponent<ObjectivesPanelView>();
+
+        if (objectivesPanelRect == null && panelView != null)
+            objectivesPanelRect = panelView.transform as RectTransform;
+
+        if (boardLayout == null)
+            boardLayout = FindFirstObjectByType<BoardWorldLayoutFromUI>();
     }
 
     private void OnEnable()
@@ -23,6 +33,9 @@ public class ObjectivesPanelPresenter : MonoBehaviour
 
         BuildRowsIfNeeded();
         RefreshAll(playFeedback: false);
+
+        //boardu hizala
+        ApplyBoardLayout();
 
         gameState.ObjectivesReset += OnObjectivesReset;
         gameState.ObjectiveProgressChanged += OnObjectiveProgressChanged;
@@ -40,6 +53,8 @@ public class ObjectivesPanelPresenter : MonoBehaviour
     {
         BuildRowsIfNeeded();
         RefreshAll(playFeedback: false);
+
+        ApplyBoardLayout();
     }
 
     private void BuildRowsIfNeeded()
@@ -91,6 +106,17 @@ public class ObjectivesPanelPresenter : MonoBehaviour
         row.SetIcon(panelView.GetIcon(uiType));
         row.SetText($"{GetDisplayName(obj.type)}: {obj.current}/{obj.target}");
         row.SetCompleted(obj.current >= obj.target, playFeedbackIfJustCompleted: playFeedback);
+    }
+    private void ApplyBoardLayout()
+    {
+        if (boardLayout == null) return;
+        if (objectivesPanelRect == null) return;
+
+        // UI layout'unun final ölçülere oturmasını zorla
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(objectivesPanelRect);
+
+        boardLayout.ApplyLayout();
     }
 
     private ObjectiveType ToObjectiveType(TileType tileType)

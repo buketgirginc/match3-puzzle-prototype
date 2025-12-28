@@ -44,7 +44,8 @@ namespace Match3.Gameplay
             LayoutBackground();
         }
 
-        public Vector3 GridToWorld(Vector2Int pos)
+        // Grid koordinatlarını BoardView LOCAL SPACE'ine çevirir
+        public Vector3 GridToLocal(Vector2Int pos)
         {
             return new Vector3(pos.x * cellSize, pos.y * cellSize, 0f);
         }
@@ -61,9 +62,9 @@ namespace Match3.Gameplay
             viewA.SetGridPos(b);
             viewB.SetGridPos(a);
 
-            // snap transforms to new cell positions
-            viewA.transform.position = GridToWorld(b);
-            viewB.transform.position = GridToWorld(a);
+            // snap transforms to new local cell positions
+            viewA.transform.localPosition = GridToLocal(b);
+            viewB.transform.localPosition = GridToLocal(a);
 
             return true;
         }
@@ -91,7 +92,7 @@ namespace Match3.Gameplay
                         continue;
 
                     var tile = Instantiate(tilePrefab, transform);
-                    tile.transform.position = new Vector3(x * cellSize, y * cellSize, 0f);
+                    tile.transform.localPosition = GridToLocal(cell.Pos);
 
                     tile.Init(cell, null);
                     ApplyCellVisual(tile, cell.Tile);
@@ -122,10 +123,9 @@ namespace Match3.Gameplay
             float boardWidth = (_board.Width - 1) * cellSize;
             float boardHeight = (_board.Height - 1) * cellSize;
 
-            // Center in world space (relative to BoardView transform)
-            Vector3 center = transform.position + new Vector3(boardWidth * 0.5f, boardHeight * 0.5f, 0f);
-
-            boardBackground.transform.position = center;
+            // Center in local space
+            Vector3 center = new Vector3(boardWidth * 0.5f, boardHeight * 0.5f, 0f);
+            boardBackground.transform.localPosition = center;
 
             // Sliced sprite size
             float targetW = boardWidth + (backgroundPadding * 2f) + backgroundExtra.x;
@@ -153,10 +153,16 @@ namespace Match3.Gameplay
             if (!hasView || view == null)
             {
                 view = Instantiate(tilePrefab, transform);
-                view.transform.position = new Vector3(pos.x * cellSize, pos.y * cellSize, 0f);
+                view.transform.localPosition = GridToLocal(pos);
 
                 view.Init(cell, null);
                 _viewsByPos[pos] = view;
+            }
+            else
+            {
+                // Keep it snapped to the correct local slot (protects against any desync)
+                view.transform.localPosition = GridToLocal(pos);
+                view.SetGridPos(pos);
             }
 
             ApplyCellVisual(view, cell.Tile); //update the sprite
@@ -247,8 +253,8 @@ namespace Match3.Gameplay
                     Vector2Int from = tile.GridPos;
                     Vector2Int to = new Vector2Int(x, i);
 
-                    Vector3 fromW = tile.transform.position;  // gerçek dünya pozisyonu (swap sonrası daha güvenli)
-                    Vector3 toW = GridToWorld(to);
+                    Vector3 fromL = tile.transform.localPosition;  // gerçek dünya pozisyonu (swap sonrası daha güvenli)
+                    Vector3 toL = GridToLocal(to);
 
                     // yeni mapping'e koy
                     newMap[to] = tile;
@@ -257,8 +263,8 @@ namespace Match3.Gameplay
                     tile.SetGridPos(to);
 
                     tiles.Add(tile);
-                    startPos.Add(fromW);
-                    endPos.Add(toW);
+                    startPos.Add(fromL);
+                    endPos.Add(toL);
                 }
             }
 
@@ -277,14 +283,14 @@ namespace Match3.Gameplay
                 float a = Mathf.Clamp01(t / dur);
 
                 for (int i = 0; i < tiles.Count; i++)
-                    tiles[i].transform.position = Vector3.Lerp(startPos[i], endPos[i], a);
+                    tiles[i].transform.localPosition = Vector3.Lerp(startPos[i], endPos[i], a);
 
                 yield return null;
             }
 
             // 4) Snap final (kesin pozisyona kilitliyoruz)
             for (int i = 0; i < tiles.Count; i++)
-                tiles[i].transform.position = endPos[i];
+                tiles[i].transform.localPosition = endPos[i];
 
             // 5) MODEL SYNC: Board.Cells'i sahnedeki tile objelerine göre tekrar yaz
             // Önce tüm hücreleri Empty yap
@@ -321,13 +327,11 @@ namespace Match3.Gameplay
 
                     // Spawn: kolonun üstünden başlat
                     Vector2Int spawnGrid = new Vector2Int(x, _board.Height + spawnRowOffset);
-                    Vector3 spawnWorld = GridToWorld(spawnGrid);
-
-                    // Target: hücrenin world pos'u
-                    Vector3 targetWorld = GridToWorld(pos);
+                    Vector3 spawnLocal = GridToLocal(spawnGrid);
+                    Vector3 targetLocal = GridToLocal(pos);
 
                     var view = Instantiate(tilePrefab, transform);
-                    view.transform.position = spawnWorld;
+                    view.transform.localPosition = spawnLocal;
 
                     // TileView metadata + visuals
                     view.SetGridPos(pos);
@@ -338,8 +342,8 @@ namespace Match3.Gameplay
                     _viewsByPos[pos] = view;
 
                     tiles.Add(view);
-                    startPos.Add(spawnWorld);
-                    endPos.Add(targetWorld);
+                    startPos.Add(spawnLocal);
+                    endPos.Add(targetLocal);
                 }
             }
 
@@ -355,14 +359,14 @@ namespace Match3.Gameplay
                 float a = Mathf.Clamp01(t / dur);
 
                 for (int i = 0; i < tiles.Count; i++)
-                    tiles[i].transform.position = Vector3.Lerp(startPos[i], endPos[i], a);
+                    tiles[i].transform.localPosition = Vector3.Lerp(startPos[i], endPos[i], a);
 
                 yield return null;
             }
 
             // Snap final
             for (int i = 0; i < tiles.Count; i++)
-                tiles[i].transform.position = endPos[i];
+                tiles[i].transform.localPosition = endPos[i];
         }
     }
 }
