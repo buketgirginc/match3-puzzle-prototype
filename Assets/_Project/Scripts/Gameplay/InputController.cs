@@ -231,29 +231,39 @@ namespace Match3.Gameplay
             {
                 Debug.Log($"--- Cascade Step {safety} ---");
 
-                //match detection
+                // match detection
                 var matches = boardView.Board.FindAllMatches();
                 if (matches.Count == 0) { Debug.Log("No matches found. Resolve finished."); break; }
 
-                //objectives progress
+                // 1) STONE DAMAGE (adjacent matches)
+                boardView.Board.ApplyAdjacentStoneDamage(matches, out var stonesHit, out var stonesBroken);
+
+                // 2) objectives progress (tiles)
                 if (gameState != null)
                     gameState.CollectFromMatches(matches, boardView.Board);
 
                 Debug.Log($"Matches found: {matches.Count}");
                 Debug.Log("Board BEFORE clear:\n" + boardView.Board.DebugPrint());
 
-                // clear anim
+                // clear anim (tiles)
                 yield return StartCoroutine(boardView.AnimateClearAndRemove(matches));
 
                 // clear data
                 boardView.Board.ClearMatches(matches);
                 Debug.Log("Board AFTER clear (empties created):\n" + boardView.Board.DebugPrint());
 
+                // Stone visuals update: broken stones disappear now
+                if (stonesBroken.Count > 0)
+                {
+                    foreach (var p in stonesBroken)
+                        boardView.RefreshCell(p);
+                }
+
                 // gravity (animated) + model sync
                 yield return StartCoroutine(boardView.AnimateGravityAndSyncModel());
                 Debug.Log("Board AFTER gravity:\n" + boardView.Board.DebugPrint());
 
-                //refill
+                // refill
                 int spawned = boardView.Board.RefillEmptiesAvoidImmediateMatches();
                 Debug.Log($"Refill done. Spawned tiles: {spawned}");
                 Debug.Log("Board AFTER refill:\n" + boardView.Board.DebugPrint());

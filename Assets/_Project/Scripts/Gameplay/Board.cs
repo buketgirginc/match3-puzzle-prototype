@@ -217,6 +217,53 @@ namespace Match3.Gameplay
             return count >= minLength;
         }
 
+        public void ApplyAdjacentStoneDamage(
+                   IEnumerable<Vector2Int> clearedCells,
+                   out HashSet<Vector2Int> stonesHit,
+                   out HashSet<Vector2Int> stonesBroken)
+        {
+            stonesHit = new HashSet<Vector2Int>();
+            stonesBroken = new HashSet<Vector2Int>();
+
+            // 4-directional adjacency
+            Vector2Int[] dirs = new[]
+            {
+                new Vector2Int( 1, 0),
+                new Vector2Int(-1, 0),
+                new Vector2Int( 0, 1),
+                new Vector2Int( 0,-1),
+            };
+
+            foreach (var p in clearedCells)
+            {
+                for (int i = 0; i < dirs.Length; i++)
+                {
+                    Vector2Int n = p + dirs[i];
+                    if (!InBounds(n)) continue;
+
+                    var cell = Cells[n.x, n.y];
+                    if (!cell.HasStone) continue;
+
+                    // multi-hit allowed: each adjacent cleared cell deals 1 damage
+                    cell.StoneHP -= 1;
+                    stonesHit.Add(n);
+
+                    if (cell.StoneHP <= 0)
+                    {
+                        cell.HasStone = false;
+                        cell.StoneHP = 0;
+                        cell.Tile = TileType.Empty; // guarantee
+                        stonesBroken.Add(n);
+                    }
+                }
+            }
+        }
+
+        private bool InBounds(Vector2Int p)
+        {
+            return p.x >= 0 && p.x < Width && p.y >= 0 && p.y < Height;
+        }
+
         public bool ApplyGravity()
         {
             bool moved = false;
@@ -253,7 +300,9 @@ namespace Match3.Gameplay
             {
                 for (int y = 0; y < Height; y++)
                 {
-                    if (Cells[x, y].Tile != TileType.Empty) continue; //tüm gridi gez, cell doluysa dokunma
+                    if (Cells[x, y].HasStone) continue; //stone ise spawn yok
+
+                    if (Cells[x, y].Tile != TileType.Empty) continue; // cell doluysa spawn yok
 
                     Vector2Int pos = new Vector2Int(x, y);
 
@@ -283,15 +332,20 @@ namespace Match3.Gameplay
             {
                 for (int x = 0; x < Width; x++)
                 {
-                    char c = Cells[x, y].Tile switch
-                    {
-                        TileType.Empty => '.',
-                        TileType.Red => 'R',
-                        TileType.Blue => 'B',
-                        TileType.Green => 'G',
-                        TileType.Yellow => 'Y',
-                        _ => '?'
-                    };
+                    var cell = Cells[x, y];
+
+                    char c =
+                        cell.HasStone ? 'S' :
+                        cell.Tile switch
+                        {
+                            TileType.Empty => '.',
+                            TileType.Red => 'R',
+                            TileType.Blue => 'B',
+                            TileType.Green => 'G',
+                            TileType.Yellow => 'Y',
+                            _ => '?'
+                        };
+
                     sb.Append(c).Append(' ');
                 }
                 sb.AppendLine();
@@ -299,5 +353,6 @@ namespace Match3.Gameplay
 
             return sb.ToString();
         }
+
     }
 }

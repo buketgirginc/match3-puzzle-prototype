@@ -294,49 +294,102 @@ namespace Match3.Gameplay
             var startPos = new List<Vector3>(_viewsByPos.Count);
             var endPos = new List<Vector3>(_viewsByPos.Count);
 
+            int H = _board.Height;
+
             for (int x = 0; x < _board.Width; x++)
             {
-                // Bu kolondaki tile'ları topla
-                var column = new List<TileView>();
-
-                foreach (var kvp in _viewsByPos)
+                // 1) collect blocked Y (stones) in this column
+                var blockedYs = new List<int>();
+                for (int y = 0; y < H; y++)
                 {
-                    if (kvp.Key.x == x && kvp.Value != null)
-                        column.Add(kvp.Value);
+                    if (_board.Cells[x, y].HasStone)
+                        blockedYs.Add(y);
+                }
+                blockedYs.Sort();
+
+                // Helper: process a segment [segStart..segEnd]
+                void ProcessSegment(int segStart, int segEnd)
+                {
+                    if (segEnd < segStart) return;
+
+                    // Collect tile views currently inside this segment
+                    var segmentTiles = new List<TileView>();
+
+                    foreach (var kvp in _viewsByPos)
+                    {
+                        Vector2Int p = kvp.Key;
+                        if (p.x != x) continue;
+
+                        var tv = kvp.Value;
+                        if (tv == null) continue;
+
+                        int y0 = tv.GridPos.y;
+                        if (y0 < segStart || y0 > segEnd) continue;
+
+                        segmentTiles.Add(tv);
+                    }
+
+                    // sort bottom -> top
+                    segmentTiles.Sort((a, b) => a.GridPos.y.CompareTo(b.GridPos.y));
+
+                    int writeY = segStart;
+
+                    for (int i = 0; i < segmentTiles.Count; i++)
+                    {
+                        var tile = segmentTiles[i];
+
+                        Vector2Int from = tile.GridPos;
+                        Vector2Int to = new Vector2Int(x, writeY);
+
+                        // Safety: never target a stone cell (shouldn't happen if seg excludes stones)
+                        if (_board.Cells[x, writeY].HasStone)
+                        {
+                            // Find next free slot inside segment
+                            int yy = writeY + 1;
+                            while (yy <= segEnd && _board.Cells[x, yy].HasStone) yy++;
+                            if (yy > segEnd) break;
+                            to = new Vector2Int(x, yy);
+                            writeY = yy;
+                        }
+
+                        Vector3 fromL = tile.transform.localPosition;
+                        Vector3 toL = GridToLocal(to);
+
+                        newMap[to] = tile;
+                        tile.SetGridPos(to);
+
+                        tiles.Add(tile);
+                        startPos.Add(fromL);
+                        endPos.Add(toL);
+
+                        writeY++;
+                        if (writeY > segEnd) break;
+                    }
                 }
 
-                // en alttaki taş en önce olacak şekilde sıralama
-                column.Sort((a, b) => a.GridPos.y.CompareTo(b.GridPos.y));
+                // 2) walk segments separated by stones
+                int currentStart = 0;
 
-                // "Compress": Bu kolonda tile sayısı kadar tile aşağıdan yukarı dizilecek
-                for (int i = 0; i < column.Count; i++)
+                for (int i = 0; i < blockedYs.Count; i++)
                 {
-                    var tile = column[i]; //i: gravity sonrası hedef y pozisyonudur
+                    int stoneY = blockedYs[i];
+                    int segEnd = stoneY - 1;
 
-                    Vector2Int from = tile.GridPos;
-                    Vector2Int to = new Vector2Int(x, i);
+                    ProcessSegment(currentStart, segEnd);
 
-                    Vector3 fromL = tile.transform.localPosition;  // gerçek dünya pozisyonu (swap sonrası daha güvenli)
-                    Vector3 toL = GridToLocal(to);
-
-                    // yeni mapping'e koy
-                    newMap[to] = tile;
-
-                    // tile'ın gridpos'unu hemen güncelle (input zaten kilitli resolve sırasında)
-                    tile.SetGridPos(to);
-
-                    tiles.Add(tile);
-                    startPos.Add(fromL);
-                    endPos.Add(toL);
+                    currentStart = stoneY + 1;
                 }
+
+                // final segment above last stone
+                ProcessSegment(currentStart, H - 1);
             }
 
-            // 2) yeni mappingi aktif hale getir
+            // 3) yeni mappingi aktif hale getir
             _viewsByPos.Clear();
             foreach (var kvp in newMap)
                 _viewsByPos[kvp.Key] = kvp.Value;
 
-            // 3) Animasyon: tüm tile'ları aynı anda hedefe lerp et
+            // 4) Animasyon: tüm tile'ları aynı anda hedefe lerp et
             float t = 0f;
             float dur = Mathf.Max(0.0001f, gravityDuration);
 
@@ -351,7 +404,7 @@ namespace Match3.Gameplay
                 yield return null;
             }
 
-            // 4) Snap final (kesin pozisyona kilitliyoruz)
+            // Snap final (kesin pozisyona kilitliyoruz)
             for (int i = 0; i < tiles.Count; i++)
                 tiles[i].transform.localPosition = endPos[i];
 
@@ -364,6 +417,10 @@ namespace Match3.Gameplay
             {
                 Vector2Int p = kvp.Key;
                 TileView tile = kvp.Value;
+
+                // extra safety: don't write into stone cells
+                if (_board.Cells[p.x, p.y].HasStone) continue;
+
                 _board.Cells[p.x, p.y].Tile = tile.Type;
             }
 
