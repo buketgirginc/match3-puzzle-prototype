@@ -34,13 +34,29 @@ namespace Match3.Gameplay
             if (Mouse.current == null) return;
             if (!Mouse.current.leftButton.wasPressedThisFrame) return;
 
-            TileView tile = RaycastTileUnderMouse();
-            if (tile == null) return;
+            var hit = RaycastUnderMouse();
 
-            HandleSelection(tile);
+            if (hit.tile != null)
+            {
+                HandleSelection(hit.tile);
+                return;
+            }
+
+            if (hit.stone != null)
+            {
+                HandleStoneClick(hit.stone);
+                return;
+            }
+
+            // (Opsiyonel UX) Boş yere tıklayınca seçimi kaldır:
+            if (_firstSelected != null && !_firstSelected.Equals(null))
+            {
+                _firstSelected.SetSelected(false);
+                _firstSelected = null;
+            }
         }
 
-        private TileView RaycastTileUnderMouse()
+        private (TileView tile, StoneView stone) RaycastUnderMouse()
         {
             Vector2 screenPos = Mouse.current.position.ReadValue();
 
@@ -51,9 +67,40 @@ namespace Match3.Gameplay
             Vector2 rayPos = new Vector2(worldPos.x, worldPos.y);
 
             RaycastHit2D hit = Physics2D.Raycast(rayPos, Vector2.zero);
-            if (!hit.collider) return null;
+            if (!hit.collider) return (null, null);
 
-            return hit.collider.GetComponent<TileView>();
+            // Tile?
+            var tile = hit.collider.GetComponent<TileView>();
+            if (tile != null) return (tile, null);
+
+            // Stone?
+            var stone = hit.collider.GetComponent<StoneView>();
+            if (stone != null) return (null, stone);
+
+            return (null, null);
+        }
+
+        private void HandleStoneClick(StoneView stone)
+        {
+            if (boardView == null) return;
+            if (stone == null) return;
+
+            // Eğer hiç seçili tile yoksa stone click'i yok say
+            if (_firstSelected == null || _firstSelected.Equals(null)) return;
+
+            Vector2Int a = _firstSelected.GridPos;
+            Vector2Int b = stone.GridPos;
+
+            // sadece adjacent ise nudge göster
+            if (AreAdjacent(a, b))
+            {
+                // stone hücresinin world pozisyonunu hesapla (tile yok ama hedef noktaya doğru nudge yapacağız)
+                Vector3 targetWorld = boardView.transform.TransformPoint(boardView.GridToLocal(b));
+                StartCoroutine(PlayInvalidNudgeToPoint(_firstSelected, targetWorld));
+            }
+
+            _firstSelected.SetSelected(false);
+            _firstSelected = null;
         }
 
         private void HandleSelection(TileView tile)
@@ -92,6 +139,19 @@ namespace Match3.Gameplay
 
                 Vector2Int a = _firstSelected.GridPos;
                 Vector2Int b = second.GridPos;
+
+                // --- STONE BLOCK: do not allow swap into stone cells ---
+                var cellA = boardView.Board.Cells[a.x, a.y];
+                var cellB = boardView.Board.Cells[b.x, b.y];
+
+                if (cellA.HasStone || cellB.HasStone)
+                {
+                    StartCoroutine(PlayInvalidSwapFeedback(_firstSelected, second));
+
+                    _firstSelected.SetSelected(false);
+                    _firstSelected = null;
+                    return;
+                }
 
                 // Same tile type? Don't swap
                 if (_firstSelected.Type == second.Type)
@@ -260,6 +320,39 @@ namespace Match3.Gameplay
             t1.position = p1;
             t2.position = p2;
 
+            _isAnimating = false;
+        }
+
+        private IEnumerator PlayInvalidNudgeToPoint(TileView first, Vector3 targetWorld)
+        {
+            _isAnimating = true;
+
+            Transform t1 = first.transform;
+            Vector3 p1 = t1.position;
+
+            Vector3 dir = (targetWorld - p1).normalized;
+
+            float half = invalidNudgeDuration * 0.5f;
+            float t = 0f;
+
+            while (t < half)
+            {
+                t += Time.deltaTime;
+                float a = Mathf.Clamp01(t / half);
+                t1.position = Vector3.Lerp(p1, p1 + dir * invalidNudgeDistance, a);
+                yield return null;
+            }
+
+            t = 0f;
+            while (t < half)
+            {
+                t += Time.deltaTime;
+                float a = Mathf.Clamp01(t / half);
+                t1.position = Vector3.Lerp(p1 + dir * invalidNudgeDistance, p1, a);
+                yield return null;
+            }
+
+            t1.position = p1;
             _isAnimating = false;
         }
     }
