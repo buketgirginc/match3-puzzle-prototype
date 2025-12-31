@@ -191,8 +191,9 @@ namespace Match3.Gameplay
 
                     // swap back (view) - if this fails, model/view may desync; log it.
                     if (!boardView.TrySwapViews(a, b))
+#if UNITY_EDITOR
                         Debug.LogWarning($"TrySwapViews failed while swapping back {a}<->{b}");
-
+#endif
                     // invalid feedback (nudge)
                     StartCoroutine(PlayInvalidSwapFeedback(_firstSelected, second));
 
@@ -222,18 +223,26 @@ namespace Match3.Gameplay
             if (boardView.IsResolving) yield break;
 
             boardView.IsResolving = true;
-
+#if UNITY_EDITOR
             Debug.Log("=== RESOLVE START ===");
             Debug.Log("Initial Board:\n" + boardView.Board.DebugPrint());
-
+#endif
             int safety = 0;
             while (safety++ < 50)
             {
+#if UNITY_EDITOR
                 Debug.Log($"--- Cascade Step {safety} ---");
+#endif
 
                 // match detection
                 var matches = boardView.Board.FindAllMatches();
-                if (matches.Count == 0) { Debug.Log("No matches found. Resolve finished."); break; }
+                if (matches.Count == 0)
+                {
+#if UNITY_EDITOR
+                    Debug.Log("No matches found. Resolve finished.");
+#endif
+                    break;
+                }
 
                 // 1) stone damage (adjacent matches)
                 boardView.Board.ApplyAdjacentStoneDamage(matches, out var stonesHit, out var stonesBroken);
@@ -243,15 +252,19 @@ namespace Match3.Gameplay
                 if (gameState != null)
                     gameState.CollectFromMatches(matches, boardView.Board);
 
+#if UNITY_EDITOR
                 Debug.Log($"Matches found: {matches.Count}");
                 Debug.Log("Board BEFORE clear:\n" + boardView.Board.DebugPrint());
+#endif
 
                 // clear anim (tiles)
                 yield return StartCoroutine(boardView.AnimateClearAndRemove(matches));
 
                 // clear data
                 boardView.Board.ClearMatches(matches);
-                Debug.Log("Board AFTER clear (empties created):\n" + boardView.Board.DebugPrint());
+#if UNITY_EDITOR
+                Debug.Log("Board AFTER clear:\n" + boardView.Board.DebugPrint());
+#endif
 
                 // Stone visuals update: broken stones disappear now
                 if (stonesBroken.Count > 0)
@@ -266,20 +279,27 @@ namespace Match3.Gameplay
 
                 // gravity (animated) + model sync
                 yield return StartCoroutine(boardView.AnimateGravityAndSyncModel());
+#if UNITY_EDITOR
                 Debug.Log("Board AFTER gravity:\n" + boardView.Board.DebugPrint());
+#endif
 
                 // refill
                 int spawned = boardView.Board.RefillEmptiesAvoidImmediateMatches();
+#if UNITY_EDITOR
                 Debug.Log($"Refill done. Spawned tiles: {spawned}");
                 Debug.Log("Board AFTER refill:\n" + boardView.Board.DebugPrint());
-
+#endif
                 yield return StartCoroutine(boardView.AnimateRefillDrop());
+#if UNITY_EDITOR
                 Debug.Log("Refill drop animation done.");
+#endif
 
                 yield return null;
             }
 
+#if UNITY_EDITOR
             Debug.Log("=== RESOLVE END ===");
+#endif
             boardView.IsResolving = false;
         }
 

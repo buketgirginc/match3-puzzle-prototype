@@ -146,10 +146,9 @@ public class ObjectiveRowView : MonoBehaviour
 
         while (t < duration)
         {
-            t += Time.unscaledDeltaTime; // UI için güzel
+            t += Time.unscaledDeltaTime;
             float k = Mathf.Clamp01(t / duration);
 
-            // basit easeOutBack hissi (hafif)
             float eased = EaseOutBack(k);
 
             transform.localScale = Vector3.LerpUnclamped(start, target, eased);

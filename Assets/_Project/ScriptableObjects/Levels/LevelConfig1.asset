@@ -18,11 +18,8 @@ MonoBehaviour:
   startingMoves: 20
   objectives:
   - type: 1
-    target: 5
+    target: 18
   - type: 2
-    target: 5
-  - type: 3
-    target: 5
-  - type: 4
-    target: 5
+    target: 18
   stonePositions: []
+  stoneTarget: 0

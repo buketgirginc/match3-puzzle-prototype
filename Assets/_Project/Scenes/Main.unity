@@ -337,7 +337,7 @@ MonoBehaviour:
   boardRoot: {fileID: 1139482098}
   worldCamera: {fileID: 519420031}
   boardFrameRenderer: {fileID: 559833384}
-  debugLog: 1
+  debugLog: 0
 --- !u!1 &348807548
 GameObject:
   m_ObjectHideFlags: 0
@@ -1055,7 +1055,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Match3.Levels.LevelManager
   levels:
-  - {fileID: 11400000, guid: f39ffc7044a329a4393861ddb30c978a, type: 2}
+  - {fileID: 11400000, guid: 7684495e71f2f684c8f81358a76534f6, type: 2}
   - {fileID: 11400000, guid: f39ffc7044a329a4393861ddb30c978a, type: 2}
 --- !u!4 &831357302
 Transform:

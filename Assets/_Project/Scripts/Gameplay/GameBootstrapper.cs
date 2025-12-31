@@ -25,7 +25,10 @@ namespace Match3
             var level = levelManager != null ? levelManager.CurrentLevel : null;
             if (level == null)
             {
+#if UNITY_EDITOR
                 Debug.LogError("[GameBootstrapper] No LevelConfig found.");
+#endif
+
                 return;
             }
 
@@ -56,7 +59,10 @@ namespace Match3
                 // Bounds guard
                 if (p.x < 0 || p.x >= board.Width || p.y < 0 || p.y >= board.Height)
                 {
+#if UNITY_EDITOR
                     Debug.LogWarning($"[GameBootstrapper] Stone position out of bounds: {p}");
+#endif
+
                     continue;
                 }
 
