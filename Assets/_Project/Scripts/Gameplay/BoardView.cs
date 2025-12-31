@@ -12,6 +12,10 @@ namespace Match3.Gameplay
         [SerializeField] private Sprite[] tileSprites; // R,B,G,Y (4 items)
         [SerializeField] private float cellSize = 0.85f;
 
+        [Header("Stones")]
+        [SerializeField] private StoneView stonePrefab;
+        [SerializeField] private Sprite stoneSprite;
+
         [Header("Board Background")]
         [SerializeField] private SpriteRenderer boardBackground;
         [SerializeField] private float backgroundPadding = 0.5f;          // padding per side
@@ -32,6 +36,9 @@ namespace Match3.Gameplay
 
         // Maps grid position -> the instantiated TileView (only for NON-empty cells)
         private readonly Dictionary<Vector2Int, TileView> _viewsByPos = new();
+
+        // Maps grid position -> instantiated StoneView
+        private readonly Dictionary<Vector2Int, StoneView> _stoneViewsByPos = new();
 
         public Board Board => _board;
         public bool IsResolving { get; set; }
@@ -82,24 +89,49 @@ namespace Match3.Gameplay
             }
 
             _viewsByPos.Clear();
+            _stoneViewsByPos.Clear();
 
             for (int x = 0; x < _board.Width; x++)
+            {
                 for (int y = 0; y < _board.Height; y++)
                 {
                     var cell = _board.Cells[x, y];
+                    Vector2Int pos = cell.Pos;
 
-                    if (cell.Tile == TileType.Empty) //dont create tileview for empty cell
+                    // 1) Stone overlay (no tile in this cell)
+                    if (cell.HasStone)
+                    {
+                        CreateOrReplaceStone(pos);
+                        continue;
+                    }
+
+                    // 2) Normal tile (skip empties)
+                    if (cell.Tile == TileType.Empty)
                         continue;
 
                     var tile = Instantiate(tilePrefab, transform);
-                    tile.transform.localPosition = GridToLocal(cell.Pos);
+                    tile.transform.localPosition = GridToLocal(pos);
 
                     tile.Init(cell, null);
                     ApplyCellVisual(tile, cell.Tile);
 
-                    _viewsByPos[cell.Pos] = tile;
+                    _viewsByPos[pos] = tile;
                 }
+            }
         }
+
+
+        private void CreateOrReplaceStone(Vector2Int pos)
+        {
+            if (stonePrefab == null) return;
+
+            var stone = Instantiate(stonePrefab, transform);
+            stone.transform.localPosition = GridToLocal(pos);
+            stone.Init(pos, stoneSprite);
+
+            _stoneViewsByPos[pos] = stone;
+        }
+
 
         private void ApplyCellVisual(TileView view, TileType tileType)
         {
@@ -137,6 +169,37 @@ namespace Match3.Gameplay
         public void RefreshCell(Vector2Int pos)
         {
             var cell = _board.Cells[pos.x, pos.y];
+
+            // --- STONE CELL ---
+            if (cell.HasStone)
+            {
+                // Ensure no tile view exists here
+                if (_viewsByPos.TryGetValue(pos, out var tv) && tv != null)
+                {
+                    Destroy(tv.gameObject);
+                    _viewsByPos.Remove(pos);
+                }
+
+                // Ensure stone view exists
+                if (!_stoneViewsByPos.TryGetValue(pos, out var sv) || sv == null)
+                {
+                    CreateOrReplaceStone(pos);
+                }
+                else
+                {
+                    sv.transform.localPosition = GridToLocal(pos);
+                }
+
+                return;
+            }
+
+            // --- NON-STONE CELL: ensure stone view removed ---
+            if (_stoneViewsByPos.TryGetValue(pos, out var existingStone) && existingStone != null)
+            {
+                Destroy(existingStone.gameObject);
+                _stoneViewsByPos.Remove(pos);
+            }
+
             bool shouldHaveTile = cell.Tile != TileType.Empty;
             bool hasView = _viewsByPos.TryGetValue(pos, out var view);
 
@@ -292,13 +355,11 @@ namespace Match3.Gameplay
             for (int i = 0; i < tiles.Count; i++)
                 tiles[i].transform.localPosition = endPos[i];
 
-            // 5) MODEL SYNC: Board.Cells'i sahnedeki tile objelerine göre tekrar yaz
-            // Önce tüm hücreleri Empty yap
+            // 5) MODEL SYNC: reset ONLY Tile types (do not touch stone state)
             for (int x = 0; x < _board.Width; x++)
                 for (int y = 0; y < _board.Height; y++)
                     _board.Cells[x, y].Tile = TileType.Empty;
 
-            // Sonra mevcut objelerin Type'larını yerleştir
             foreach (var kvp in _viewsByPos)
             {
                 Vector2Int p = kvp.Key;
@@ -320,6 +381,7 @@ namespace Match3.Gameplay
                 {
                     var cell = _board.Cells[x, y];
                     if (cell.Tile == TileType.Empty) continue;
+                    if (cell.HasStone) continue; // safety: stone cells should never have tiles
 
                     Vector2Int pos = new Vector2Int(x, y);
 

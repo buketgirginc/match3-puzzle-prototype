@@ -47,5 +47,8 @@ TagManager:
   - name: Tiles
     uniqueID: 3647133041
     locked: 0
+  - name: Stones
+    uniqueID: 3530411001
+    locked: 0
   m_RenderingLayers:
   - Default

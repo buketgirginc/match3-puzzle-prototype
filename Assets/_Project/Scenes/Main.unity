@@ -938,6 +938,8 @@ MonoBehaviour:
   - {fileID: 6200686016740132074, guid: 573e85a17cbd8014e977c375aa5aa6a3, type: 3}
   - {fileID: -1118712210634263658, guid: 1a40adc4b1b28464fbbb1f9b54c5afe0, type: 3}
   cellSize: 0.85
+  stonePrefab: {fileID: 8815864933716506013, guid: 150325a5c4a36f54b9b03fc795ccce73, type: 3}
+  stoneSprite: {fileID: 6442593670185605212, guid: 20946676eb3e2784eb632635e6239ea8, type: 3}
   boardBackground: {fileID: 559833384}
   backgroundPadding: 0.7
   backgroundExtra: {x: 2, y: 2}
@@ -1053,7 +1055,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Match3.Levels.LevelManager
   levels:
-  - {fileID: 11400000, guid: 7684495e71f2f684c8f81358a76534f6, type: 2}
+  - {fileID: 11400000, guid: f39ffc7044a329a4393861ddb30c978a, type: 2}
   - {fileID: 11400000, guid: f39ffc7044a329a4393861ddb30c978a, type: 2}
 --- !u!4 &831357302
 Transform:

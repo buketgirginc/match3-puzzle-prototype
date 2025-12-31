@@ -60,6 +60,7 @@
     <Compile Include="Assets\_Project\Scripts\Core\ObjectiveType.cs" />
     <Compile Include="Assets\_Project\Scripts\UI\MovesPresenter.cs" />
     <Compile Include="Assets\_Project\Scripts\Core\TileType.cs" />
+    <Compile Include="Assets\_Project\Scripts\Gameplay\StoneView.cs" />
     <Compile Include="Assets\_Project\Scripts\UI\ObjectivesPanelView.cs" />
     <Compile Include="Assets\_Project\Scripts\Gameplay\Board.cs" />
     <Compile Include="Assets\_Project\Scripts\UI\MovesTextView.cs" />
