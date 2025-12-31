@@ -1,10 +1,25 @@
+# Unity folders
 [Ll]ibrary/
 [Tt]emp/
 [Oo]bj/
 [Bb]uild/
 [Bb]uilds/
 [Ll]ogs/
-UserSettings/
+[Mm]emoryCaptures/
+
+# OS junk
 .DS_Store
+Thumbs.db
+
+# Rider / VS
 .vscode/
 .idea/
+
+# Unity local / machine specific
+UserSettings/
+Assets/Settings/Build Profiles/
+Assets/Settings/Build Profiles.meta
+*.csproj
+
+
+
