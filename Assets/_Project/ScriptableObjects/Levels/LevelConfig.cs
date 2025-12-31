@@ -20,8 +20,11 @@ namespace Match3.Levels
         [Header("Objectives")]
         public List<MatchObjectiveData> objectives = new();
 
-        [Header("Reserved for later (Stone)")]
-        public List<Vector2Int> stonePositions = new(); // şimdilik boş kalabilir
+        [Header("Stone")]
+        public List<Vector2Int> stonePositions = new();
+
+        [Tooltip("0 ise stonePositions.Count kullanılır.")]
+        public int stoneTarget = 0;
     }
 
     [System.Serializable]

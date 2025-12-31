@@ -11,6 +11,7 @@ public class ObjectivesPanelPresenter : MonoBehaviour
 
     [Header("Board Layout")]
     [SerializeField] private BoardWorldLayoutFromUI boardLayout;
+
     private readonly List<ObjectiveRowView> _rows = new();
 
     private void Awake()
@@ -29,11 +30,11 @@ public class ObjectivesPanelPresenter : MonoBehaviour
         BuildRowsIfNeeded();
         RefreshAll(playFeedback: false);
 
-        //boardu hizala
         ApplyBoardLayout();
 
         gameState.ObjectivesReset += OnObjectivesReset;
         gameState.ObjectiveProgressChanged += OnObjectiveProgressChanged;
+        gameState.StoneProgressChanged += OnStoneProgressChanged;
     }
 
     private void OnDisable()
@@ -42,14 +43,26 @@ public class ObjectivesPanelPresenter : MonoBehaviour
 
         gameState.ObjectivesReset -= OnObjectivesReset;
         gameState.ObjectiveProgressChanged -= OnObjectiveProgressChanged;
+        gameState.StoneProgressChanged -= OnStoneProgressChanged;
     }
 
     private void OnObjectivesReset()
     {
         BuildRowsIfNeeded();
         RefreshAll(playFeedback: false);
-
         ApplyBoardLayout();
+    }
+
+    private void OnObjectiveProgressChanged(int index)
+    {
+        RefreshRow(index, playFeedback: true);
+    }
+
+    private void OnStoneProgressChanged()
+    {
+        if (!gameState.HasStoneObjective) return;
+        int stoneRowIndex = gameState.Objectives.Count; // appended row
+        RefreshRow(stoneRowIndex, playFeedback: true);
     }
 
     private void BuildRowsIfNeeded()
@@ -57,13 +70,14 @@ public class ObjectivesPanelPresenter : MonoBehaviour
         var objectives = gameState.Objectives;
         if (objectives == null) return;
 
-        // Eğer sayılar değiştiyse (level değişimi vs), yeniden kur.
-        if (_rows.Count != objectives.Count)
+        int desired = objectives.Count + (gameState.HasStoneObjective ? 1 : 0);
+
+        if (_rows.Count != desired)
         {
             panelView.Clear();
             _rows.Clear();
 
-            for (int i = 0; i < objectives.Count; i++)
+            for (int i = 0; i < desired; i++)
             {
                 var row = panelView.AddRow();
                 _rows.Add(row);
@@ -76,35 +90,44 @@ public class ObjectivesPanelPresenter : MonoBehaviour
 
     private void RefreshAll(bool playFeedback)
     {
-        var objectives = gameState.Objectives;
-        if (objectives == null) return;
-
-        for (int i = 0; i < objectives.Count; i++)
+        for (int i = 0; i < _rows.Count; i++)
             RefreshRow(i, playFeedback);
-    }
-
-    private void OnObjectiveProgressChanged(int index)
-    {
-        RefreshRow(index, playFeedback: true);
     }
 
     private void RefreshRow(int index, bool playFeedback)
     {
-        var objectives = gameState.Objectives;
-        if (objectives == null) return;
-        if (index < 0 || index >= objectives.Count) return;
         if (index < 0 || index >= _rows.Count) return;
 
-        var obj = objectives[index];
-        var row = _rows[index];
+        int tileObjectiveCount = gameState.Objectives.Count;
 
-        // TileType -> ObjectiveType (UI sprite seçimi için)
-        var uiType = ToObjectiveType(obj.type);
+        //Tile objective rows
+        if (index < tileObjectiveCount)
+        {
+            var obj = gameState.Objectives[index];
+            var row = _rows[index];
 
-        row.SetIcon(panelView.GetIcon(uiType));
-        row.SetText($"{GetDisplayName(obj.type)}: {obj.current}/{obj.target}");
-        row.SetCompleted(obj.current >= obj.target, playFeedbackIfJustCompleted: playFeedback);
+            var uiType = ToObjectiveType(obj.type);
+
+            row.SetIcon(panelView.GetIcon(uiType));
+            row.SetText($"{GetDisplayName(obj.type)}: {obj.current}/{obj.target}");
+            row.SetCompleted(obj.current >= obj.target, playFeedbackIfJustCompleted: playFeedback);
+            return;
+        }
+
+        // Stone objective row
+        if (gameState.HasStoneObjective && index == tileObjectiveCount)
+        {
+            var row = _rows[index];
+
+            int cur = gameState.StonesBrokenCurrent;
+            int target = gameState.StonesBrokenTarget;
+
+            row.SetIcon(panelView.GetIcon(ObjectiveType.Stone));
+            row.SetText($"Stone: {cur}/{target}");
+            row.SetCompleted(cur >= target, playFeedbackIfJustCompleted: playFeedback);
+        }
     }
+
     private void ApplyBoardLayout()
     {
         if (boardLayout == null) return;
@@ -119,7 +142,7 @@ public class ObjectivesPanelPresenter : MonoBehaviour
             TileType.Blue => ObjectiveType.BlueTile,
             TileType.Green => ObjectiveType.GreenTile,
             TileType.Yellow => ObjectiveType.YellowTile,
-            _ => ObjectiveType.RedTile // Empty burada gelmemeli; güvenlik için
+            _ => ObjectiveType.RedTile
         };
     }
 

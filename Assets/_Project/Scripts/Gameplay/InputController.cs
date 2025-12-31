@@ -257,6 +257,10 @@ namespace Match3.Gameplay
                 {
                     foreach (var p in stonesBroken)
                         boardView.RefreshCell(p);
+
+                    //stoe objective progress
+                    if (gameState != null)
+                        gameState.CollectBrokenStones(stonesBroken.Count);
                 }
 
                 // gravity (animated) + model sync

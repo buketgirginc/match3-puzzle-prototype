@@ -11,18 +11,32 @@ namespace Match3.Gameplay
         [SerializeField] private int startingMoves = 20;
         public int MovesLeft { get; private set; }
 
-        [Header("Objectives")]
+        [Header("Objectives (Tiles)")]
         [SerializeField] private List<MatchObjective> objectives = new();
 
         public IReadOnlyList<MatchObjective> Objectives => objectives;
 
-        public bool IsWin => objectives.TrueForAll(o => o.current >= o.target); //TrueForAll listedeki her elemana şunu uygular: 
+        //stone objective
+        public int StonesBrokenCurrent { get; private set; }
+        public int StonesBrokenTarget { get; private set; }
+        public bool HasStoneObjective => StonesBrokenTarget > 0;
+
+        public bool IsWin
+        {
+            get
+            {
+                bool tileOk = objectives.TrueForAll(o => o.current >= o.target);//TrueForAll listedeki her elemana şunu uygular: 
                                                                                 // “Her objective için o objective’in current’ı target’a eşit veya büyük mü?”
+                bool stoneOk = !HasStoneObjective || StonesBrokenCurrent >= StonesBrokenTarget;
+                return tileOk && stoneOk;
+            }
+        }
         public bool IsLose => MovesLeft <= 0 && !IsWin;
-        public event System.Action<int> ObjectiveProgressChanged;
+        public event System.Action<int> ObjectiveProgressChanged; //tile objective index
         public event System.Action ObjectivesReset;
         public event System.Action<int> MovesChanged;
         public event System.Action<bool> GameOver; // true = win, false = lose
+        public event System.Action StoneProgressChanged; // stone objective changed
         public bool IsGameOver { get; private set; }
 
 
@@ -58,8 +72,25 @@ namespace Match3.Gameplay
                     objectives[i].current = 0;
             }
 
+            // stone objective
+            StonesBrokenCurrent = 0;
+
+            if (level != null)
+            {
+                int target = level.stoneTarget;
+                if (target <= 0 && level.stonePositions != null && level.stonePositions.Count > 0)
+                    target = level.stonePositions.Count;
+
+                StonesBrokenTarget = Mathf.Max(0, target);
+            }
+            else
+            {
+                StonesBrokenTarget = 0;
+            }
+
             MovesChanged?.Invoke(MovesLeft);
             ObjectivesReset?.Invoke();
+            StoneProgressChanged?.Invoke();
 
         }
 
@@ -113,6 +144,20 @@ namespace Match3.Gameplay
                     }
                 }
             }
+            CheckGameOver();
+        }
+
+        public void CollectBrokenStones(int brokenCount)
+        {
+            if (!HasStoneObjective) return;
+            if (brokenCount <= 0) return;
+
+            int before = StonesBrokenCurrent;
+            StonesBrokenCurrent = Mathf.Min(StonesBrokenTarget, StonesBrokenCurrent + brokenCount);
+
+            if (StonesBrokenCurrent != before)
+                StoneProgressChanged?.Invoke();
+
             CheckGameOver();
         }
 
