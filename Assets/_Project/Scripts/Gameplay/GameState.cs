@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Match3.Core;
 using UnityEngine;
+using Match3.Levels;
 
 namespace Match3.Gameplay
 {
@@ -26,12 +27,36 @@ namespace Match3.Gameplay
 
 
 
-        public void Init()
+        public void Init(LevelConfig level)
         {
             IsGameOver = false;
 
+            // moves
+            startingMoves = level != null ? level.startingMoves : startingMoves;
             MovesLeft = startingMoves;
-            foreach (var o in objectives) o.current = 0;
+
+            // objectives
+            if (level != null && level.objectives != null)
+            {
+                objectives.Clear();
+
+                for (int i = 0; i < level.objectives.Count; i++)
+                {
+                    var d = level.objectives[i];
+                    objectives.Add(new MatchObjective
+                    {
+                        type = d.type,
+                        current = 0,
+                        target = d.target
+                    });
+                }
+            }
+            else
+            {
+                // fallback: inspector’daki objectives’i koru ama current’ları sıfırla
+                for (int i = 0; i < objectives.Count; i++)
+                    objectives[i].current = 0;
+            }
 
             MovesChanged?.Invoke(MovesLeft);
             ObjectivesReset?.Invoke();

@@ -1023,6 +1023,53 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!1 &831357300
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 831357302}
+  - component: {fileID: 831357301}
+  m_Layer: 0
+  m_Name: LevelManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &831357301
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 831357300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 411281a0ca5ae2449ba09a08cb03cfe8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Match3.Levels.LevelManager
+  levels:
+  - {fileID: 11400000, guid: 7684495e71f2f684c8f81358a76534f6, type: 2}
+  - {fileID: 11400000, guid: f39ffc7044a329a4393861ddb30c978a, type: 2}
+--- !u!4 &831357302
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 831357300}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 194.82718, y: 267.96246, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &995154939
 GameObject:
   m_ObjectHideFlags: 0
@@ -1316,6 +1363,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Match3.GameBootstrapper
   boardView: {fileID: 797755788}
   gameState: {fileID: 1758535504}
+  levelManager: {fileID: 831357301}
 --- !u!1 &1561695523
 GameObject:
   m_ObjectHideFlags: 0
@@ -1424,10 +1472,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bbe548a8d074b7f469153f4f64d2d8f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Match3.Gameplay.GameState
-  startingMoves: 30
+  startingMoves: 20
   objectives:
+  - type: 0
+    target: 0
+    current: 0
+  - type: 1
+    target: 15
+    current: 0
+  - type: 4
+    target: 15
+    current: 0
   - type: 2
-    target: 10
+    target: 15
+    current: 0
+  - type: 3
+    target: 15
     current: 0
 --- !u!4 &1758535505
 Transform:
@@ -1736,3 +1796,4 @@ SceneRoots:
   - {fileID: 117136250}
   - {fileID: 1561695526}
   - {fileID: 1139482098}
+  - {fileID: 831357302}

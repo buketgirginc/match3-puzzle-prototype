@@ -63,6 +63,8 @@
     <Compile Include="Assets\_Project\Scripts\UI\ObjectivesPanelView.cs" />
     <Compile Include="Assets\_Project\Scripts\Gameplay\Board.cs" />
     <Compile Include="Assets\_Project\Scripts\UI\MovesTextView.cs" />
+    <Compile Include="Assets\_Project\ScriptableObjects\Levels\LevelConfig.cs" />
+    <Compile Include="Assets\_Project\Scripts\Levels\LevelManager.cs" />
     <Compile Include="Assets\_Project\Scripts\UI\ObjectiveRowView.cs" />
     <Compile Include="Assets\_Project\Scripts\Gameplay\InputController.cs" />
     <Compile Include="Assets\_Project\Scripts\UI\WinLosePanelView.cs" />

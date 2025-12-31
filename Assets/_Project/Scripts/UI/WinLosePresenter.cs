@@ -1,16 +1,14 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using Match3.Gameplay;
+using Match3.Levels;
 
 public class WinLosePresenter : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private GameState gameState;
     [SerializeField] private WinLosePanelView view;
-
-    [Header("Temp (until LevelConfig)")]
-    [SerializeField] private int currentLevelNumber = 1;
-    [SerializeField] private bool isFinalLevel = false;
+    [SerializeField] private LevelManager levelManager;
+    [SerializeField] private Match3.GameBootstrapper bootstrapper;
 
     private void Awake()
     {
@@ -19,6 +17,12 @@ public class WinLosePresenter : MonoBehaviour
 
         if (gameState == null)
             gameState = FindFirstObjectByType<GameState>(FindObjectsInactive.Exclude);
+
+        if (levelManager == null)
+            levelManager = FindFirstObjectByType<LevelManager>(FindObjectsInactive.Exclude);
+
+        if (bootstrapper == null)
+            bootstrapper = FindFirstObjectByType<Match3.GameBootstrapper>(FindObjectsInactive.Exclude);
     }
 
     private void OnEnable()
@@ -42,14 +46,40 @@ public class WinLosePresenter : MonoBehaviour
     {
         if (view == null) return;
 
-        view.Show(currentLevelNumber, win, isFinalLevel);
+        int levelNumber = 1;
+        bool isFinalLevel = false;
 
+        if (levelManager != null && levelManager.CurrentLevel != null)
+        {
+            levelNumber = levelManager.CurrentLevel.levelNumber;
+            isFinalLevel = levelManager.IsFinalLevel;
+        }
 
-        view.SetButtonAction(RestartScene);
-    }
+        view.Show(levelNumber, win, isFinalLevel);
 
-    private void RestartScene()
-    {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        if (bootstrapper == null)
+        {
+            Debug.LogWarning("WinLosePresenter: GameBootstrapper reference missing.");
+            return;
+        }
+
+        if (!win)
+        {
+            // LOSE -> Restart
+            view.SetButtonAction(() =>
+            {
+                view.Hide();
+                bootstrapper.RestartLevel();
+            });
+        }
+        else
+        {
+            // WIN -> Next level (if not final), else Restart
+            view.SetButtonAction(() =>
+            {
+                view.Hide();
+                bootstrapper.NextLevelOrRestartIfFinal();
+            });
+        }
     }
 }
