@@ -123,7 +123,7 @@ public class ObjectivesPanelPresenter : MonoBehaviour
             int target = gameState.StonesBrokenTarget;
 
             row.SetIcon(panelView.GetIcon(ObjectiveType.Stone));
-            row.SetText($"Stone: {cur}/{target}");
+            row.SetText($"Stone (2 hits): {cur}/{target}");
             row.SetCompleted(cur >= target, playFeedbackIfJustCompleted: playFeedback);
         }
     }
