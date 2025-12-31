@@ -855,7 +855,7 @@ MonoBehaviour:
   m_Intensity: 1
   m_LightVolumeIntensity: 1
   m_LightVolumeEnabled: 0
-  m_ApplyToSortingLayers: 00000000dbbcb44971d562d9
+  m_ApplyToSortingLayers: 00000000dbbcb44971d562d9f9cb6dd2
   m_LightCookieSprite: {fileID: 0}
   m_DeprecatedPointLightCookieSprite: {fileID: 0}
   m_LightOrder: 0
@@ -1518,6 +1518,14 @@ PrefabInstance:
       propertyPath: gameState
       value: 
       objectReference: {fileID: 1758535504}
+    - target: {fileID: 2932504904153034559, guid: b99310b065686e3428f5e2485294b653, type: 3}
+      propertyPath: bootstrapper
+      value: 
+      objectReference: {fileID: 1338417586}
+    - target: {fileID: 2932504904153034559, guid: b99310b065686e3428f5e2485294b653, type: 3}
+      propertyPath: levelManager
+      value: 
+      objectReference: {fileID: 831357301}
     - target: {fileID: 5245237635355215666, guid: b99310b065686e3428f5e2485294b653, type: 3}
       propertyPath: m_Name
       value: WinLosePanel

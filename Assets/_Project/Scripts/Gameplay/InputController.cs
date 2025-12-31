@@ -235,8 +235,9 @@ namespace Match3.Gameplay
                 var matches = boardView.Board.FindAllMatches();
                 if (matches.Count == 0) { Debug.Log("No matches found. Resolve finished."); break; }
 
-                // 1) STONE DAMAGE (adjacent matches)
+                // 1) stone damage (adjacent matches)
                 boardView.Board.ApplyAdjacentStoneDamage(matches, out var stonesHit, out var stonesBroken);
+                boardView.PlayStoneHitFeedback(stonesHit, stonesBroken);
 
                 // 2) objectives progress (tiles)
                 if (gameState != null)

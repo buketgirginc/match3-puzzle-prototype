@@ -15,10 +15,9 @@ MonoBehaviour:
   levelNumber: 2
   width: 8
   height: 8
-  startingMoves: 5
+  startingMoves: 20
   objectives:
   - type: 2
     target: 1
-  stonePositions:
-  - {x: 0, y: 0}
-  - {x: 1, y: 1}
+  stonePositions: []
+  stoneTarget: 0

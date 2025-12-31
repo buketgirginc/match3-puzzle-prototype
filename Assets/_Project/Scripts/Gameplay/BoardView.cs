@@ -487,5 +487,20 @@ namespace Match3.Gameplay
             for (int i = 0; i < tiles.Count; i++)
                 tiles[i].transform.localPosition = endPos[i];
         }
+
+        public void PlayStoneHitFeedback(IEnumerable<Vector2Int> stonesHit, HashSet<Vector2Int> stonesBroken = null)
+        {
+            if (stonesHit == null) return;
+
+            foreach (var p in stonesHit)
+            {
+                if (_stoneViewsByPos.TryGetValue(p, out var sv) && sv != null)
+                {
+                    bool breaking = stonesBroken != null && stonesBroken.Contains(p);
+                    sv.PlayHitFeedback(breaking);
+                }
+            }
+        }
+
     }
 }
