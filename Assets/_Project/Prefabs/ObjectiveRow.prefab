@@ -188,8 +188,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 48
-  m_fontSizeBase: 48
+  m_fontSize: 38
+  m_fontSizeBase: 38
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -336,11 +336,11 @@ MonoBehaviour:
   labelText: {fileID: 3922181668169838487}
   tickObject: {fileID: 7894794621014897206}
   tickImage: {fileID: 1916566724850530394}
-  normalTextColor: {r: 0.19215687, g: 0.24313726, b: 0.34901962, a: 1}
   completedTextColor: {r: 0.08627451, g: 0.73333335, b: 0.46666667, a: 1}
-  popScale: 0.03
-  popUpDuration: 0.06
-  popDownDuration: 0.12
+  punchScale: 1.12
+  punchUpDuration: 0.08
+  punchDownDuration: 0.1
+  colorDuration: 0.12
 --- !u!1 &7894794621014897206
 GameObject:
   m_ObjectHideFlags: 0

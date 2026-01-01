@@ -31,10 +31,10 @@ namespace Match3.Gameplay
             if (_isAnimating) return;
             if (boardView != null && boardView.IsResolving) return;
 
-            if (Mouse.current == null) return;
-            if (!Mouse.current.leftButton.wasPressedThisFrame) return;
+            // Pointer (mouse/touch/pen) input
+            if (!TryGetPointerPressThisFrame(out Vector2 screenPos)) return;
 
-            var hit = RaycastUnderMouse();
+            var hit = RaycastUnderScreenPos(screenPos);
 
             if (hit.tile != null)
             {
@@ -56,30 +56,46 @@ namespace Match3.Gameplay
             }
         }
 
-        private (TileView tile, StoneView stone) RaycastUnderMouse()
+        /// <summary>
+        /// Returns true when a primary pointer press happened this frame, and provides the screen position.
+        /// Works with mouse on desktop and touch on mobile (Input System).
+        /// </summary>
+        private bool TryGetPointerPressThisFrame(out Vector2 screenPos)
         {
-            Vector2 screenPos = Mouse.current.position.ReadValue();
+            screenPos = default;
 
-            Vector3 worldPos = _cam.ScreenToWorldPoint(
-                new Vector3(screenPos.x, screenPos.y, 0f)
-            );
+            // Pointer.current covers mouse/touch/pen where supported
+            var pointer = Pointer.current;
+            if (pointer == null) return false;
 
+            // Some platforms may expose press via different controls;
+            // Pointer.press is the generic "primary press" control.
+            if (pointer.press == null) return false;
+            if (!pointer.press.wasPressedThisFrame) return false;
+
+            screenPos = pointer.position.ReadValue();
+            return true;
+        }
+
+        private (TileView tile, StoneView stone) RaycastUnderScreenPos(Vector2 screenPos)
+        {
+            if (_cam == null) _cam = Camera.main;
+            if (_cam == null) return (null, null);
+
+            Vector3 worldPos = _cam.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 0f));
             Vector2 rayPos = new Vector2(worldPos.x, worldPos.y);
 
             RaycastHit2D hit = Physics2D.Raycast(rayPos, Vector2.zero);
             if (!hit.collider) return (null, null);
 
-            // Tile?
             var tile = hit.collider.GetComponent<TileView>();
             if (tile != null) return (tile, null);
 
-            // Stone?
             var stone = hit.collider.GetComponent<StoneView>();
             if (stone != null) return (null, stone);
 
             return (null, null);
         }
-
         private void HandleStoneClick(StoneView stone)
         {
             if (boardView == null) return;
